@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopEase - Online Shopping for Everything{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">Welcome to ShopEase</h1>
+        <p class="lead mb-5">Discover amazing products at unbeatable prices</p>
+        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">Shop Now</a>
+    </div>
+</section>
+
+<!-- Featured Categories -->
+<section class="container mb-5">
+    <h2 class="text-center mb-4">Shop by Category</h2>
+    <div class="row">
+        {% for category in top_categories %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <a href="{% url 'store:category_detail' category.slug %}" class="text-decoration-none">
+                <div class="category-card">
+                    {% if category.image %}
+                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-fluid w-100">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x200?text=Category" alt="{{ category.name }}" class="img-fluid w-100">
+                    {% endif %}
+                    <div class="category-title">
+                        <h5 class="mb-0">{{ category.name }}</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No categories available</p>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="text-center mt-3">
+        <a href="{% url 'store:product_list' %}" class="btn btn-outline-primary">View All Categories</a>
+    </div>
+</section>
+
+<!-- Featured Products Carousel -->
+<section class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Featured Products</h2>
+        <a href="{% url 'store:product_list' %}?featured=1" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="row">
+        {% for product in featured_products %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="card product-card h-100">
+                <div class="position-relative">
+                    {% if product.is_on_sale %}
+                    <span class="badge bg-danger position-absolute top-0 start-0 m-2">SALE</span>
+                    {% endif %}
+                    {% with primary_image=product.get_thumbnail %}
+                    {% if primary_image %}
+                    <img src="{{ primary_image.url }}" class="card-img-top p-3" alt="{{ product.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x300?text=Product" class="card-img-top p-3" alt="{{ product.name }}">
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text small text-muted">{{ product.description|truncatechars:100 }}</p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                {% if product.is_on_sale %}
+                                <span class="product-sale-price">${{ product.sale_price }}</span>
+                                <span class="product-original-price ms-2">${{ product.price }}</span>
+                                {% else %}
+                                <span class="product-price">${{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="rating">
+                                {% with ''|center:product.reviews.all|length as range %}
+                                {% for _ in range %}
+                                <i class="fas fa-star"></i>
+                                {% endfor %}
+                                {% endwith %}
+                                <span class="text-muted small">({{ product.reviews.count }})</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No featured products available</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Banner Section -->
+<section class="container-fluid p-0 mb-5">
+    <div class="bg-secondary text-white p-5 text-center">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8 text-md-start">
+                    <h2 class="mb-3">Free Shipping on Orders Over $50</h2>
+                    <p class="lead mb-0">Shop now and enjoy free shipping on thousands of products!</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="{% url 'store:product_list' %}" class="btn btn-light btn-lg">Shop Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- New Arrivals -->
+<section class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>New Arrivals</h2>
+        <a href="{% url 'store:product_list' %}?sort=newest" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="row">
+        {% for product in new_arrivals %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="card product-card h-100">
+                <div class="position-relative">
+                    <span class="badge bg-success position-absolute top-0 start-0 m-2">NEW</span>
+                    {% with primary_image=product.get_thumbnail %}
+                    {% if primary_image %}
+                    <img src="{{ primary_image.url }}" class="card-img-top p-3" alt="{{ product.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x300?text=Product" class="card-img-top p-3" alt="{{ product.name }}">
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text small text-muted">{{ product.description|truncatechars:100 }}</p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                {% if product.is_on_sale %}
+                                <span class="product-sale-price">${{ product.sale_price }}</span>
+                                <span class="product-original-price ms-2">${{ product.price }}</span>
+                                {% else %}
+                                <span class="product-price">${{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="rating">
+                                {% with ''|center:product.reviews.all|length as range %}
+                                {% for _ in range %}
+                                <i class="fas fa-star"></i>
+                                {% endfor %}
+                                {% endwith %}
+                                <span class="text-muted small">({{ product.reviews.count }})</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No new arrivals available</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Top Brands -->
+<section class="container mb-5">
+    <h2 class="text-center mb-4">Popular Brands</h2>
+    <div class="row justify-content-center">
+        {% for brand in top_brands %}
+        <div class="col-md-2 col-sm-4 col-6 mb-4 text-center">
+            <a href="{% url 'store:brand_detail' brand.slug %}" class="text-decoration-none">
+                <div class="card h-100 p-3">
+                    {% if brand.logo %}
+                    <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="img-fluid mb-2" style="max-height: 80px; object-fit: contain;">
+                    {% else %}
+                    <img src="https://via.placeholder.com/150x80?text=Brand" alt="{{ brand.name }}" class="img-fluid mb-2">
+                    {% endif %}
+                    <h6 class="mb-0">{{ brand.name }}</h6>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No brands available</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container mb-5">
+    <div class="row text-center">
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 border-0 bg-light p-4">
+                <div class="mb-3">
+                    <i class="fas fa-truck fa-3x text-primary"></i>
+                </div>
+                <h5>Free Shipping</h5>
+                <p class="text-muted small">On orders over $50</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 border-0 bg-light p-4">
+                <div class="mb-3">
+                    <i class="fas fa-undo fa-3x text-primary"></i>
+                </div>
+                <h5>Easy Returns</h5>
+                <p class="text-muted small">30 day return policy</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 border-0 bg-light p-4">
+                <div class="mb-3">
+                    <i class="fas fa-lock fa-3x text-primary"></i>
+                </div>
+                <h5>Secure Payments</h5>
+                <p class="text-muted small">Protected by Stripe</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 border-0 bg-light p-4">
+                <div class="mb-3">
+                    <i class="fas fa-headset fa-3x text-primary"></i>
+                </div>
+                <h5>24/7 Support</h5>
+                <p class="text-muted small">Customer support</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="container mb-5">
+    <div class="card bg-light">
+        <div class="card-body p-5 text-center">
+            <h3 class="mb-3">Subscribe to Our Newsletter</h3>
+            <p class="mb-4">Get the latest updates on new products and upcoming sales</p>
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <form class="d-flex">
+                        <input type="email" class="form-control" placeholder="Your email address">
+                        <button type="submit" class="btn btn-primary ms-2">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

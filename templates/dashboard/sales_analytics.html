@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Analytics - ShopEase Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 mb-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Admin Dashboard</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:home' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active py-3 border-bottom" href="{% url 'dashboard:sales' %}">
+                                <i class="fas fa-chart-line me-2"></i>Sales Analytics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:products' %}">
+                                <i class="fas fa-box me-2"></i>Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:orders' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:customers' %}">
+                                <i class="fas fa-users me-2"></i>Customers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 text-danger" href="{% url 'core:home' %}">
+                                <i class="fas fa-store me-2"></i>Back to Store
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <h2 class="mb-4">Sales Analytics</h2>
+            
+            <!-- Sales Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-4">
+                    <div class="card border-left-primary h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Daily Sales</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ daily_sales }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 mb-4">
+                    <div class="card border-left-success h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Weekly Sales</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ weekly_sales }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-week fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 mb-4">
+                    <div class="card border-left-info h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Monthly Sales</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ monthly_sales }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sales Chart -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Sales Trend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h4>Sales Chart Placeholder</h4>
+                        <p class="text-muted">This is where a sales trend chart would be displayed.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Products -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Top Selling Products</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-box fa-4x text-muted mb-3"></i>
+                        <h4>Top Products Placeholder</h4>
+                        <p class="text-muted">This is where top selling products would be displayed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

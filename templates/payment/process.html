@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'orders:order_detail' order.id %}">Order #{{ order.id }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Payment</li>
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Payment for Order #{{ order.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
+                        <h3>Complete Your Payment</h3>
+                        <p>Your order total is <strong>${{ order.total_amount }}</strong></p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Order Summary</h5>
+                            <p><strong>Order ID:</strong> {{ order.id }}</p>
+                            <p><strong>Date:</strong> {{ order.created_at|date:"F d, Y" }}</p>
+                            <p><strong>Items:</strong> {{ order.items.count }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Amount Details</h5>
+                            <p><strong>Subtotal:</strong> ${{ order.get_subtotal }}</p>
+                            <p><strong>Shipping:</strong> ${{ order.shipping_amount }}</p>
+                            <p><strong>Tax:</strong> ${{ order.tax_amount }}</p>
+                            <p><strong>Total:</strong> ${{ order.total_amount }}</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p>You will be redirected to our secure payment processor to complete your payment.</p>
+                        <form action="{% url 'payment:process' order.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-lock me-2"></i>Proceed to Payment
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-center mb-3">
+                            <i class="fab fa-cc-visa fa-2x text-primary mx-2"></i>
+                            <i class="fab fa-cc-mastercard fa-2x text-danger mx-2"></i>
+                            <i class="fab fa-cc-amex fa-2x text-info mx-2"></i>
+                            <i class="fab fa-cc-paypal fa-2x text-primary mx-2"></i>
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted">We accept all major credit cards and PayPal</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        <small>Your payment information is secure and encrypted</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

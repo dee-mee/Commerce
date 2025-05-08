@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block title %}Vendor Dashboard - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Vendor Dashboard</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="text-center p-3 border-bottom">
+                        {% if user.vendor_profile.logo %}
+                        <img src="{{ user.vendor_profile.logo.url }}" alt="{{ user.vendor_profile.store_name }}" class="img-fluid rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-store fa-3x text-secondary"></i>
+                        </div>
+                        {% endif %}
+                        <h6 class="mb-1">{{ user.vendor_profile.store_name }}</h6>
+                        <p class="text-muted small mb-0">{{ user.get_full_name|default:user.username }}</p>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active py-3 border-bottom" href="{% url 'accounts:vendor_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'accounts:vendor_products' %}">
+                                <i class="fas fa-box me-2"></i>Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'accounts:vendor_orders' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'accounts:vendor_reviews' %}">
+                                <i class="fas fa-star me-2"></i>Reviews
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'accounts:vendor_earnings' %}">
+                                <i class="fas fa-money-bill-wave me-2"></i>Earnings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'accounts:vendor_settings' %}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 text-danger" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>Back to Profile
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <!-- Overview Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Sales (Monthly)</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ monthly_sales }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Earnings</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_earnings }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Products</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-box fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Pending Orders</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_orders }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-shopping-bag fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Recent Orders -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Recent Orders</h6>
+                            <a href="{% url 'accounts:vendor_orders' %}" class="btn btn-light btn-sm">View All</a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_orders %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Customer</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in recent_orders %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'accounts:vendor_order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                                <p>No recent orders found.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Reviews -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Recent Reviews</h6>
+                            <a href="{% url 'accounts:vendor_reviews' %}" class="btn btn-light btn-sm">View All</a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_reviews %}
+                            <div class="list-group list-group-flush">
+                                {% for review in recent_reviews %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex w-100 justify-content-between mb-1">
+                                        <h6 class="mb-0">{{ review.user.get_full_name|default:review.user.username }}</h6>
+                                        <small class="text-muted">{{ review.created_at|date:"M d" }}</small>
+                                    </div>
+                                    <p class="mb-1">
+                                        <a href="{% url 'store:product_detail' review.product.slug %}">{{ review.product.name }}</a>
+                                    </p>
+                                    <div class="mb-1">
+                                        {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <small>{{ review.comment|truncatechars:100 }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                                <p>No recent reviews found.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Low Stock Alert -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">Low Stock Alert</h6>
+                </div>
+                <div class="card-body">
+                    {% if low_stock_products %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Current Stock</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in low_stock_products %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if product.get_thumbnail %}
+                                            <img src="{{ product.get_thumbnail.url }}" alt="{{ product.name }}" class="img-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-image text-secondary"></i>
+                                            </div>
+                                            {% endif %}
+                                            {{ product.name }}
+                                        </div>
+                                    </td>
+                                    <td>{{ product.sku }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ product.stock }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'accounts:vendor_product_edit' product.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit me-1"></i>Update Stock
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p>All products have sufficient stock levels.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

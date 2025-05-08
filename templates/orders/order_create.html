@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'cart:cart_detail' %}">Shopping Cart</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+        </ol>
+    </nav>
+    
+    <h2 class="mb-4">Checkout</h2>
+    
+    <div class="row">
+        <!-- Checkout Form -->
+        <div class="col-lg-8">
+            <form method="post" action="{% url 'orders:order_create' %}">
+                {% csrf_token %}
+                
+                <!-- Shipping Address -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Shipping Address</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if addresses %}
+                        <div class="mb-4">
+                            <div class="row">
+                                {% for address in addresses %}
+                                {% if address.address_type == 'S' or address.address_type == 'B' %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 {% if address.is_default %}border-primary{% else %}border{% endif %}">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="address_id" id="address-{{ address.id }}" value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
+                                                <label class="form-check-label" for="address-{{ address.id }}">
+                                                    <strong>{{ address.full_name }}</strong>
+                                                    {% if address.is_default %}<span class="badge bg-primary ms-2">Default</span>{% endif %}
+                                                </label>
+                                            </div>
+                                            <hr>
+                                            <address class="mb-0">
+                                                {{ address.address_line }}<br>
+                                                {{ address.city }}, {{ address.state }} {{ address.postal_code }}<br>
+                                                {{ address.country.name }}<br>
+                                                Phone: {{ address.phone }}
+                                            </address>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <a href="{% url 'accounts:address_create' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus me-2"></i>Add New Address
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-map-marker-alt fa-3x mb-3 text-muted"></i>
+                            <h5>No shipping addresses found</h5>
+                            <p class="text-muted mb-3">Please add a shipping address to continue with checkout.</p>
+                            <a href="{% url 'accounts:address_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Shipping Address
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Shipping Method -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Shipping Method</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if shipping_methods %}
+                        <div class="row">
+                            {% for method in shipping_methods %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 border">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="shipping_method" id="shipping-{{ method.id }}" value="{{ method.id }}" {% if forloop.first %}checked{% endif %} required>
+                                            <label class="form-check-label" for="shipping-{{ method.id }}">
+                                                <strong>{{ method.name }}</strong>
+                                                <span class="badge bg-primary ms-2">${{ method.price }}</span>
+                                            </label>
+                                        </div>
+                                        <hr>
+                                        <p class="mb-0">{{ method.description }}</p>
+                                        <p class="text-muted small mb-0">Estimated delivery: {{ method.estimated_days }} days</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-truck fa-3x mb-3 text-muted"></i>
+                            <h5>No shipping methods available</h5>
+                            <p class="text-muted">Please contact customer support.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Order Notes -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Special Instructions (Optional)</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg" {% if not addresses or not shipping_methods %}disabled{% endif %}>
+                        <i class="fas fa-credit-card me-2"></i>Proceed to Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card mb-4 sticky-top" style="top: 20px; z-index: 1;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for item in cart %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                {% if item.product.get_thumbnail %}
+                                                <img src="{{ item.product.get_thumbnail.url }}" alt="{{ item.product.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: contain;">
+                                                {% else %}
+                                                <img src="https://via.placeholder.com/50?text=Product" alt="{{ item.product.name }}" class="img-fluid">
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <small>{{ item.product.name }}</small>
+                                                {% if item.variant %}
+                                                <small class="d-block text-muted">{{ item.variant.name }}: {{ item.variant.value }}</small>
+                                                {% endif %}
+                                                <small class="d-block text-muted">Qty: {{ item.quantity }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">${{ item.total_price }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>${{ cart.get_subtotal }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <span>Calculated at next step</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (10%):</span>
+                        <span>${{ cart.get_subtotal|floatformat:2|multiply:0.1 }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Estimated Total:</strong>
+                        <strong>${{ cart.get_subtotal|floatformat:2|add:cart.get_subtotal|floatformat:2|multiply:0.1 }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Info -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-3">Secure Checkout</h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-lock text-success me-2"></i>
+                        <span>Your payment information is secure</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        <span>SSL encrypted checkout</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                        <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                        <i class="fab fa-cc-amex fa-2x text-info"></i>
+                        <i class="fab fa-cc-paypal fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

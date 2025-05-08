@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign Up - ShopEase{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  }
+  .auth-card .card-header {
+    background-color: var(--primary-color);
+    border-radius: 10px 10px 0 0;
+    padding: 1.5rem;
+  }
+  .auth-card .card-body {
+    padding: 2rem;
+  }
+  .auth-btn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+  }
+  .auth-btn:hover {
+    background-color: #e68a00;
+    border-color: #e68a00;
+  }
+  .auth-link {
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+  .auth-link:hover {
+    color: #e68a00;
+    text-decoration: underline;
+  }
+  .benefits-icon {
+    color: var(--primary-color);
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+  .benefits-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  }
+  .benefits-title {
+    color: var(--dark-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card auth-card">
+        <div class="card-header text-white">
+          <h3 class="mb-0">Sign Up</h3>
+        </div>
+        <div class="card-body p-4">
+          <p class="mb-4">Already have an account? Then please <a href="{% url 'login' %}" class="auth-link">sign in</a>.</p>
+          
+          <form method="post">
+            {% csrf_token %}
+            
+            {{ form|crispy }}
+            
+            <div class="mt-4">
+              <button type="submit" class="btn auth-btn btn-lg w-100">Sign Up</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card benefits-card mt-4">
+        <div class="card-body p-4">
+          <h5 class="card-title fw-bold mb-4">Benefits of Creating an Account</h5>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="d-flex mb-4">
+                <div class="me-3">
+                  <i class="fas fa-history benefits-icon"></i>
+                </div>
+                <div>
+                  <h6 class="benefits-title">Order History</h6>
+                  <p class="text-muted small mb-0">Track all your orders in one place</p>
+                </div>
+              </div>
+              <div class="d-flex mb-3">
+                <div class="me-3">
+                  <i class="fas fa-heart benefits-icon"></i>
+                </div>
+                <div>
+                  <h6 class="benefits-title">Wishlist</h6>
+                  <p class="text-muted small mb-0">Save items for later</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex mb-4">
+                <div class="me-3">
+                  <i class="fas fa-truck benefits-icon"></i>
+                </div>
+                <div>
+                  <h6 class="benefits-title">Faster Checkout</h6>
+                  <p class="text-muted small mb-0">Save your shipping details</p>
+                </div>
+              </div>
+              <div class="d-flex mb-3">
+                <div class="me-3">
+                  <i class="fas fa-tag benefits-icon"></i>
+                </div>
+                <div>
+                  <h6 class="benefits-title">Special Offers</h6>
+                  <p class="text-muted small mb-0">Get access to exclusive deals</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

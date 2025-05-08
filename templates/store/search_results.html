@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Search Results</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Sidebar / Filters -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'store:search_products' %}">
+                        <input type="hidden" name="q" value="{{ query }}">
+                        
+                        <!-- Categories -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Categories</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="category" value="all" id="category-all" {% if not current_category %}checked{% endif %}>
+                                <label class="form-check-label" for="category-all">
+                                    All Categories
+                                </label>
+                            </div>
+                            {% for category in categories %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="category" value="{{ category.id }}" id="category-{{ category.id }}" {% if current_category == category.id|stringformat:"s" %}checked{% endif %}>
+                                <label class="form-check-label" for="category-{{ category.id }}">
+                                    {{ category.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Price Range</h6>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="number" class="form-control" name="min_price" placeholder="Min" value="{{ current_min_price }}" min="0">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" name="max_price" placeholder="Max" value="{{ current_max_price }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Brands -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Brands</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="brand" value="all" id="brand-all" {% if not current_brand %}checked{% endif %}>
+                                <label class="form-check-label" for="brand-all">
+                                    All Brands
+                                </label>
+                            </div>
+                            {% for brand in brands %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="brand" value="{{ brand.id }}" id="brand-{{ brand.id }}" {% if current_brand == brand.id|stringformat:"s" %}checked{% endif %}>
+                                <label class="form-check-label" for="brand-{{ brand.id }}">
+                                    {{ brand.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Sorting -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Sort By</h6>
+                            <select class="form-select" name="sort">
+                                <option value="relevance" {% if current_sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                                <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                                <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Results -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Search Results for "{{ query }}"</h2>
+                <span class="text-muted">{{ page_obj.paginator.count }} products found</span>
+            </div>
+            
+            {% if page_obj %}
+            <div class="row">
+                {% for product in page_obj %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card product-card h-100">
+                        <div class="position-relative">
+                            {% if product.is_on_sale %}
+                            <span class="badge bg-danger position-absolute top-0 start-0 m-2">SALE</span>
+                            {% endif %}
+                            {% if product.get_thumbnail %}
+                            <img src="{{ product.get_thumbnail.url }}" class="card-img-top p-3" alt="{{ product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=Product" class="card-img-top p-3" alt="{{ product.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text small text-muted">{{ product.description|truncatechars:100 }}</p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        {% if product.is_on_sale %}
+                                        <span class="product-sale-price">${{ product.sale_price }}</span>
+                                        <span class="product-original-price ms-2">${{ product.price }}</span>
+                                        {% else %}
+                                        <span class="product-price">${{ product.price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="rating">
+                                        {% with ''|center:product.get_average_rating as range %}
+                                        {% for _ in range %}
+                                        <i class="fas fa-star text-warning"></i>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        <span class="text-muted small">({{ product.reviews.count }})</span>
+                                    </div>
+                                </div>
+                                <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary w-100">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_brand %}&brand={{ current_brand }}{% endif %}{% if current_min_price %}&min_price={{ current_min_price }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                        <a class="page-link" href="?q={{ query }}&page={{ i }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_brand %}&brand={{ current_brand }}{% endif %}{% if current_min_price %}&min_price={{ current_min_price }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_brand %}&brand={{ current_brand }}{% endif %}{% if current_min_price %}&min_price={{ current_min_price }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h3>No products found</h3>
+                    <p class="text-muted">Try adjusting your search or filter criteria</p>
+                    <a href="{% url 'store:product_list' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-shopping-bag me-2"></i>Browse All Products
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

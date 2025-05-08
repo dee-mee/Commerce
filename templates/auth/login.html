@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign In - ShopEase{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  }
+  .auth-card .card-header {
+    background-color: var(--primary-color);
+    border-radius: 10px 10px 0 0;
+    padding: 1.5rem;
+  }
+  .auth-card .card-body {
+    padding: 2rem;
+  }
+  .auth-btn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+  }
+  .auth-btn:hover {
+    background-color: #e68a00;
+    border-color: #e68a00;
+  }
+  .auth-link {
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+  .auth-link:hover {
+    color: #e68a00;
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card auth-card">
+        <div class="card-header text-white">
+          <h3 class="mb-0">Sign In</h3>
+        </div>
+        <div class="card-body p-4">
+          
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <p>Your username and password didn't match. Please try again.</p>
+          </div>
+          {% endif %}
+          
+          {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-info">
+              <p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+              <p>Please login to see this page.</p>
+            </div>
+            {% endif %}
+          {% endif %}
+          
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <input type="hidden" name="next" value="{{ next }}">
+            
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <a class="auth-link" href="{% url 'password_reset' %}">
+                Forgot Password?
+              </a>
+              <button class="btn auth-btn" type="submit">Sign In</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

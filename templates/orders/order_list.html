@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">My Orders</li>
+        </ol>
+    </nav>
+    
+    <h2 class="mb-4">My Orders</h2>
+    
+    {% if orders %}
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Order History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>${{ order.total_amount }}</td>
+                            <td>
+                                {% if order.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif order.status == 'processing' %}
+                                <span class="badge bg-info">Processing</span>
+                                {% elif order.status == 'shipped' %}
+                                <span class="badge bg-primary">Shipped</span>
+                                {% elif order.status == 'delivered' %}
+                                <span class="badge bg-success">Delivered</span>
+                                {% elif order.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% elif order.status == 'refunded' %}
+                                <span class="badge bg-secondary">Refunded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.payment_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif order.payment_status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                                {% elif order.payment_status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% elif order.payment_status == 'refunded' %}
+                                <span class="badge bg-secondary">Refunded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if order.status == 'pending' %}
+                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                {% endif %}
+                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-undo"></i> Return
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-bag fa-4x mb-3 text-muted"></i>
+        <h3>No orders found</h3>
+        <p class="text-muted mb-4">You haven't placed any orders yet.</p>
+        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

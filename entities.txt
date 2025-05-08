@@ -1,0 +1,269 @@
+🗂️ Mapping Your Components to Entities
+Core Content and Entities
+Product Listings
+→ Product, ProductImage, Category, Brand, ProductVariant
+Shopping Cart and Checkout
+→ Cart, CartItem, Order, OrderItem, Payment
+User Interface (UI) & Navigation
+→ Not a database entity, but impacts Category, Page, and site structure
+Content Management System (CMS)
+→ Page, Banner, AdminUser
+Payment Options
+→ Payment, PaymentMethod (can be a separate entity if you want to track available methods)
+Security
+→ Not a database entity, but involves SSL, user authentication, permissions
+Shipping and Return Policies
+→ ShippingMethod, DeliveryTracking, Page (for policy content)
+Customer Support
+→ SupportTicket, FAQ, Message
+Social Media Integration
+→ Not a database entity, but can be managed via Page or site settings
+Additional Features
+SEO
+→ Not a direct entity, but can be supported by fields in Product, Category, Page (e.g., meta tags)
+Digital Marketing
+→ Promotion, Coupon, Banner
+Analytics and Reports
+→ Report
+Content Marketing
+→ Page, BlogPost (if you want a blog)
+Wishlists
+→ Wishlist, WishlistItem
+Mobile Responsiveness
+→ Not a database entity, but impacts UI/UX and template design
+Categories List
+Categories and Subcategories
+→ Category (with self-referencing parent_id for subcategories)
+User Reviews
+Reviews and Ratings
+→ Review, ReviewImage
+Brands List
+Brands
+→ Brand
+Brand Details
+→ Brand, Product (with brand_id), and possibly a Page for each brand
+Users/Customers
+Users/Customers
+→ User, Address, Order, Wishlist, Review
+Sellers
+Sellers/Vendors
+→ VendorProfile, User (with is_vendor flag)
+Orders
+Orders
+→ Order, OrderItem, Payment, DeliveryTracking
+Payments
+Payments
+→ Payment, PaymentMethod (optional)
+Shipping
+Shipping
+→ ShippingMethod, DeliveryTracking, Address
+Promotions/Discounts
+Promotions/Discounts
+→ Promotion, Coupon
+Admin/Management
+Admin/Management
+→ AdminUser, Page, Banner, Report
+Inventory
+Inventory
+→ Product (stock field), or a separate Inventory entity if you want to track stock changes over time
+🆕 Additional Entities from Your List
+Here are a few extra entities you mentioned that can be added for even more detail:
+PaymentMethod
+(to list and manage available payment options)
+ReturnRequest
+(to handle product returns and refunds)
+BlogPost
+(for content marketing, if you want a blog)
+SiteSetting
+(for global settings like social media links, contact info, etc.)
+
+User
+    - id, username, email, password, is_customer, is_vendor, is_admin, date_joined
+
+Address
+    - id, user_id, full_name, phone, address_line, city, state, country, postal_code, is_default
+
+VendorProfile
+    - id, user_id, store_name, description, logo, approved, rating
+
+Category
+    - id, name, slug, parent_id
+
+Brand
+    - id, name, logo, description
+
+Product
+    - id, name, description, price, category_id, brand_id, vendor_id, stock, sku, is_active, created_at, updated_at
+
+ProductImage
+    - id, product_id, image, alt_text
+
+ProductVariant
+    - id, product_id, name, value, price_override, stock_override
+
+Cart
+    - id, user_id, session_key, created_at
+
+CartItem
+    - id, cart_id, product_id, variant_id, quantity
+
+Wishlist
+    - id, user_id, created_at
+
+WishlistItem
+    - id, wishlist_id, product_id
+
+Order
+    - id, user_id, address_id, total_amount, status, payment_status, shipping_method_id, created_at, updated_at
+
+OrderItem
+    - id, order_id, product_id, variant_id, quantity, price
+
+Payment
+    - id, order_id, payment_method_id, amount, status, transaction_id, paid_at
+
+PaymentMethod
+    - id, name, description, is_active
+
+Invoice
+    - id, order_id, invoice_number, pdf_file, issued_at
+
+ShippingMethod
+    - id, name, description, fee, estimated_days
+
+DeliveryTracking
+    - id, order_id, tracking_number, status, updated_at
+
+ReturnRequest
+    - id, order_id, user_id, reason, status, created_at, processed_at
+
+Review
+    - id, user_id, product_id, rating, comment, created_at, approved
+
+ReviewImage
+    - id, review_id, image
+
+Coupon
+    - id, code, discount_type, discount_value, valid_from, valid_to, usage_limit, used_count, is_active
+
+Promotion
+    - id, name, description, start_date, end_date, discount_type, discount_value
+
+Notification
+    - id, user_id, message, is_read, created_at
+
+Message
+    - id, sender_id, receiver_id, subject, body, sent_at
+
+AdminUser
+    - id, user_id, role
+
+Banner
+    - id, image, link, is_active, position
+
+Page
+    - id, title, slug, content, is_published
+
+BlogPost
+    - id, title, slug, content, author_id, published_at, is_published
+
+Report
+    - id, type, data, generated_at
+
+SupportTicket
+    - id, user_id, subject, message, status, created_at
+
+FAQ
+    - id, question, answer, is_active
+
+SiteSetting
+    - id, key, value
+
+Inventory (optional, for advanced stock tracking)
+    - id, product_id, change, reason, created_at
+
+RELATIONSHIPS
+-------------
+- User has many Addresses, Orders, Reviews, Notifications, SupportTickets, Wishlists
+- VendorProfile is one-to-one with User
+- Product belongs to Category, Brand, VendorProfile
+- Product has many ProductImages, ProductVariants, Reviews
+- Cart has many CartItems
+- Wishlist has many WishlistItems
+- Order has many OrderItems, one Payment, one Invoice, one DeliveryTracking, many ReturnRequests
+- Coupon/Promotion can apply to many Products
+- Payment references PaymentMethod
+
+🏆 Advanced Features & Characteristics (Jumia, Amazon, etc.)
+
+1. Multi-Vendor Marketplace Features
+Vendor Onboarding & KYC:
+Vendor registration, document upload, approval workflow, KYC verification.
+Vendor Payouts:
+Automated calculation and disbursement of vendor earnings, payout history.
+Vendor Performance Analytics:
+Sales reports, product performance, ratings, and feedback for vendors.
+
+2. Product Discovery & Personalization
+Product Recommendations:
+Personalized suggestions (“Customers also bought”, “You may like”, etc.).
+Recently Viewed Products:
+List of products a user has recently browsed.
+Personalized Homepages:
+Dynamic content based on user behavior, location, or preferences.
+
+3. Advanced Search & Filtering
+Faceted Search:
+Filter by price, brand, rating, features, etc.
+Autocomplete & Suggestions:
+Search bar with instant suggestions and trending searches.
+
+5. Order Fulfillment & Logistics
+Warehouse Management:
+Track inventory across multiple warehouses.
+Split Orders:
+Orders fulfilled from multiple locations/vendors.
+Pickup Points:
+Option to pick up orders from designated locations.
+
+6. Customer Experience
+Order Cancellation/Return Self-Service:
+Customers can initiate cancellations or returns from their account.
+Order Tracking:
+Real-time tracking with carrier integration.
+Multiple Addresses:
+Save and select from multiple shipping addresses.
+
+8. Advanced Marketing
+A/B Testing:
+Test different layouts, banners, or offers.
+
+9. Security & Compliance
+Two-Factor Authentication (2FA):
+Extra security for user accounts.
+Audit Logs:
+Track admin/user actions for compliance.
+
+10. Community & Social Features
+Q&A on Product Pages:
+Customers can ask and answer questions about products.
+User Lists/Collections:
+Users can create and share product collections or wishlists.
+Product Comparison:
+Compare features and prices of multiple products.
+
+11. Mobile App Integration
+Deep Linking:
+Links that open directly in the mobile app.
+App-Only Offers:
+Special deals for mobile app users.
+
+12. Other Notable Features
+Flash Sales/Countdown Timers:
+Limited-time offers with countdowns.
+Subscription Products:
+Subscribe for regular delivery (e.g., groceries, diapers).
+Dynamic Pricing:
+Prices that change based on demand, time, or user segment.
+B2B Features:
+Bulk pricing, business accounts, purchase orders.

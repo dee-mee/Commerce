@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Completed - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+                    <h2 class="mb-3">Payment Successful!</h2>
+                    <p class="lead mb-4">Thank you for your purchase. Your payment has been processed successfully.</p>
+                    <p class="mb-4">We've sent a confirmation email with your order details.</p>
+                    <div class="d-flex justify-content-center">
+                        <a href="{% url 'orders:order_list' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-list me-2"></i>View My Orders
+                        </a>
+                        <a href="{% url 'core:home' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Return to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

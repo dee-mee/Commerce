@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}My Addresses - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">My Addresses</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">My Account</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                            <i class="fas fa-user fa-4x text-secondary"></i>
+                        </div>
+                        {% endif %}
+                        <h5>{{ user.get_full_name|default:user.username }}</h5>
+                        <p class="text-muted small">Member since {{ user.date_joined|date:"F Y" }}</p>
+                    </div>
+                    
+                    <ul class="nav flex-column nav-pills">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'accounts:address_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Addresses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'orders:order_list' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>Orders
+                            </a>
+                        </li>
+                        {% if user.is_vendor %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:vendor_dashboard' %}">
+                                <i class="fas fa-store me-2"></i>Vendor Dashboard
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:vendor_register' %}">
+                                <i class="fas fa-store me-2"></i>Become a Vendor
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Addresses -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">My Addresses</h5>
+                    <a href="{% url 'accounts:address_create' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-2"></i>Add New Address
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                    <div class="row">
+                        {% for address in addresses %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 {% if address.is_default %}border-primary{% else %}border{% endif %}">
+                                <div class="card-header {% if address.is_default %}bg-primary text-white{% else %}bg-light{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            {% if address.address_type == 'B' %}
+                                            <i class="fas fa-file-invoice me-2"></i>Billing Address
+                                            {% elif address.address_type == 'S' %}
+                                            <i class="fas fa-shipping-fast me-2"></i>Shipping Address
+                                            {% endif %}
+                                            {% if address.is_default %}<span class="badge bg-light text-primary ms-2">Default</span>{% endif %}
+                                        </h6>
+                                        <div>
+                                            <a href="{% url 'accounts:address_edit' address.id %}" class="btn btn-sm {% if address.is_default %}btn-light{% else %}btn-outline-primary{% endif %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'accounts:address_delete' address.id %}" class="btn btn-sm {% if address.is_default %}btn-light{% else %}btn-outline-danger{% endif %}">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ address.full_name }}</h6>
+                                    <address class="mb-0">
+                                        {{ address.address_line }}<br>
+                                        {{ address.city }}, {{ address.state }} {{ address.postal_code }}<br>
+                                        {{ address.country.name }}<br>
+                                        Phone: {{ address.phone }}
+                                    </address>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-map-marker-alt fa-4x mb-3 text-muted"></i>
+                        <h4>No addresses found</h4>
+                        <p class="text-muted mb-4">You haven't added any addresses yet.</p>
+                        <a href="{% url 'accounts:address_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add New Address
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

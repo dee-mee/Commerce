@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Management - ShopEase Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 mb-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Admin Dashboard</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:home' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:sales' %}">
+                                <i class="fas fa-chart-line me-2"></i>Sales Analytics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:products' %}">
+                                <i class="fas fa-box me-2"></i>Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 border-bottom" href="{% url 'dashboard:orders' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active py-3 border-bottom" href="{% url 'dashboard:customers' %}">
+                                <i class="fas fa-users me-2"></i>Customers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-3 text-danger" href="{% url 'core:home' %}">
+                                <i class="fas fa-store me-2"></i>Back to Store
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <h2 class="mb-4">Customer Management</h2>
+            
+            <!-- Customer Search -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" placeholder="Name, email, or username">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Customer Type</label>
+                            <select class="form-select" name="type">
+                                <option value="">All Types</option>
+                                <option value="customer">Customer</option>
+                                <option value="vendor">Vendor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Sort By</label>
+                            <select class="form-select" name="sort">
+                                <option value="date_joined">Date Joined</option>
+                                <option value="last_login">Last Login</option>
+                                <option value="orders">Order Count</option>
+                                <option value="spending">Total Spending</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Customer List -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">All Customers</h6>
+                </div>
+                <div class="card-body">
+                    {% if customers %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Date Joined</th>
+                                    <th>Orders</th>
+                                    <th>Total Spent</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in customers %}
+                                <tr>
+                                    <td>{{ customer.id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if customer.profile_picture %}
+                                            <img src="{{ customer.profile_picture.url }}" alt="{{ customer.username }}" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-secondary"></i>
+                                            </div>
+                                            {% endif %}
+                                            {{ customer.get_full_name|default:customer.username }}
+                                        </div>
+                                    </td>
+                                    <td>{{ customer.email }}</td>
+                                    <td>{{ customer.date_joined|date:"M d, Y" }}</td>
+                                    <td>{{ customer.orders.count }}</td>
+                                    <td>${{ customer.total_spent|default:"0.00" }}</td>
+                                    <td>
+                                        {% if customer.is_vendor %}
+                                        <span class="badge bg-primary">Vendor</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Customer</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-bs-toggle="dropdown">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#">View Orders</a></li>
+                                                <li><a class="dropdown-item" href="#">Send Email</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#">Disable Account</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h4>No customers found</h4>
+                        <p class="text-muted">There are no customers matching your criteria.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
