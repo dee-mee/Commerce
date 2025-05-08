@@ -1,0 +1,530 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E-Commerce Store{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Wishlist CSS -->
+    <link rel="stylesheet" href="{% static 'css/wishlist/wishlist.css' %}">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #ff9900;
+            --secondary-color: #146eb4;
+            --dark-color: #232f3e;
+            --light-color: #f8f9fa;
+        }
+        
+        /* Cart Animation */
+        .cart-animation-item {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: transform 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.8s ease-out;
+            transform: scale(0.4);
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Wishlist Styles */
+        .wishlist-btn {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .wishlist-btn.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .wishlist-btn.active .wishlist-icon {
+            color: white;
+        }
+        
+        .wishlist-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .wishlist-icon.active {
+            color: var(--primary-color);
+        }
+        
+        .wishlist-btn:hover .wishlist-icon {
+            transform: scale(1.2);
+        }
+        
+        .wishlist-toggle {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .wishlist-toggle.active {
+            color: var(--primary-color);
+        }
+        
+        .wishlist-toggle:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Header */
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+        
+        .navbar {
+            background-color: var(--dark-color);
+        }
+        
+        .navbar-dark .navbar-nav .nav-link {
+            color: #fff;
+        }
+        
+        .search-form {
+            width: 50%;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 0;
+            margin-bottom: 30px;
+        }
+        
+        /* Product Cards */
+        .product-card {
+            transition: transform 0.3s;
+            height: 100%;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .product-card img {
+            height: 200px;
+            object-fit: contain;
+        }
+        
+        .product-price {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .product-sale-price {
+            color: #dc3545;
+        }
+        
+        .product-original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        /* Category Cards */
+        .category-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .category-card img {
+            transition: transform 0.3s;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .category-card:hover img {
+            transform: scale(1.05);
+        }
+        
+        .category-title {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 50px;
+        }
+        
+        .footer-links h5 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .footer-links ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-links a {
+            color: #ccc;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        .social-links a:hover {
+            background-color: var(--primary-color);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #e68a00;
+            border-color: #e68a00;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #0d5a9f;
+            border-color: #0d5a9f;
+        }
+        
+        /* Cart and wishlist badges */
+        .cart-badge,
+        .wishlist-badge {
+            position: relative;
+            display: inline-block;
+        }
+        .cart-badge .badge,
+        .wishlist-badge .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.7rem;
+        }
+        
+        /* Wishlist specific styling */
+        .wishlist-badge .fa-heart {
+            color: #dc3545;
+            transition: transform 0.3s ease;
+        }
+        
+        .wishlist-badge:hover .fa-heart {
+            transform: scale(1.2);
+        }
+        
+        /* Rating Stars */
+        .rating {
+            color: var(--primary-color);
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0.75rem 0;
+        }
+        
+        /* Custom Pagination */
+        .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .page-link {
+            color: var(--primary-color);
+        }
+        
+        .page-link:hover {
+            color: #e68a00;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if user.is_authenticated %}user-authenticated{% endif %}">
+    <!-- Header -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'core:home' %}">
+                    <i class="fas fa-shopping-cart me-2"></i>ShopEase
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <form class="d-flex mx-auto search-form" action="{% url 'store:search_products' %}" method="get">
+                        <input class="form-control me-2" type="search" name="q" placeholder="Search products..." aria-label="Search">
+                        <button class="btn btn-outline-light" type="submit">Search</button>
+                    </form>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown">
+                                Categories
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% for category in categories %}
+                                <li><a class="dropdown-item" href="{% url 'store:category_detail' category.slug %}">{{ category.name }}</a></li>
+                                {% empty %}
+                                <li><a class="dropdown-item" href="#">No categories available</a></li>
+                                {% endfor %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'store:product_list' %}">All Products</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'cart:cart_detail' %}">
+                                <div class="cart-badge">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span class="badge rounded-pill">{{ cart|length }}</span>
+                                </div>
+                            </a>
+                        </li>
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'wishlist:wishlist_detail' %}">
+                                <div class="wishlist-badge">
+                                    <i class="fas fa-heart"></i>
+                                    {% if wishlist_count %}
+                                    <span class="badge rounded-pill wishlist-count">{{ wishlist_count }}</span>
+                                    {% else %}
+                                    <span class="badge rounded-pill wishlist-count d-none">0</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Addresses</a></li>
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Orders</a></li>
+                                <li><a class="dropdown-item" href="{% url 'wishlist:wishlist_detail' %}">My Wishlist</a></li>
+                                {% if user.is_vendor %}
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">Vendor Dashboard</a></li>
+                                {% else %}
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">Become a Vendor</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'auth_app:register' %}">Register</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Cart Animation Container -->
+    <div id="cart-animation-container"></div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 footer-links">
+                    <h5>Shop</h5>
+                    <ul>
+                        <li><a href="{% url 'store:product_list' %}">All Products</a></li>
+                        <li><a href="#">New Arrivals</a></li>
+                        <li><a href="#">Featured Products</a></li>
+                        <li><a href="#">Special Offers</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 footer-links">
+                    <h5>Customer Service</h5>
+                    <ul>
+                        <li><a href="{% url 'core:contact' %}">Contact Us</a></li>
+                        <li><a href="{% url 'core:faq' %}">FAQ</a></li>
+                        <li><a href="#">Shipping & Returns</a></li>
+                        <li><a href="#">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 footer-links">
+                    <h5>My Account</h5>
+                    <ul>
+                        <li><a href="{% url 'login' %}">Login</a></li>
+                        <li><a href="{% url 'auth_app:register' %}">Register</a></li>
+                        <li><a href="{% url 'orders:order_list' %}">Order History</a></li>
+                        <li><a href="{% url 'orders:order_list' %}">My Addresses</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 footer-links">
+                    <h5>About Us</h5>
+                    <ul>
+                        <li><a href="{% url 'core:about' %}">Our Story</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                    <div class="social-links mt-3">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="mt-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 ShopEase. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/cc-badges-ppmcvdam.png" alt="Payment Methods">
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Cart Animation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to animate item to cart
+            window.animateToCart = function(productImg, productId, quantity = 1) {
+                // Get the source image and cart position
+                const sourceImg = productImg;
+                const cartIcon = document.querySelector('.cart-badge');
+                
+                if (!sourceImg || !cartIcon) return;
+                
+                // Get positions
+                const sourceRect = sourceImg.getBoundingClientRect();
+                const cartRect = cartIcon.getBoundingClientRect();
+                
+                // Create animation element
+                const animationItem = document.createElement('div');
+                animationItem.className = 'cart-animation-item';
+                animationItem.style.width = '80px';
+                animationItem.style.height = '80px';
+                
+                // Set initial position
+                animationItem.style.top = sourceRect.top + 'px';
+                animationItem.style.left = sourceRect.left + 'px';
+                
+                // Create image element
+                const imgElement = document.createElement('img');
+                imgElement.src = sourceImg.src;
+                imgElement.style.width = '100%';
+                imgElement.style.height = '100%';
+                imgElement.style.objectFit = 'contain';
+                
+                // Append to animation container
+                animationItem.appendChild(imgElement);
+                document.getElementById('cart-animation-container').appendChild(animationItem);
+                
+                // Trigger animation
+                setTimeout(() => {
+                    animationItem.style.opacity = '1';
+                    animationItem.style.transform = 'scale(1)';
+                }, 10);
+                
+                setTimeout(() => {
+                    // Animate to cart
+                    animationItem.style.top = (cartRect.top + cartRect.height/2 - 40) + 'px';
+                    animationItem.style.left = (cartRect.left + cartRect.width/2 - 40) + 'px';
+                    animationItem.style.transform = 'scale(0.3)';
+                    
+                    // Update cart count
+                    setTimeout(() => {
+                        // Fade out
+                        animationItem.style.opacity = '0';
+                        
+                        // Remove element after animation
+                        setTimeout(() => {
+                            document.getElementById('cart-animation-container').removeChild(animationItem);
+                            
+                            // Animate cart badge
+                            const badge = document.querySelector('.cart-badge .badge');
+                            if (badge) {
+                                badge.classList.add('animate__animated', 'animate__rubberBand');
+                                setTimeout(() => {
+                                    badge.classList.remove('animate__animated', 'animate__rubberBand');
+                                }, 1000);
+                            }
+                        }, 300);
+                    }, 500);
+                }, 300);
+            };
+        });
+    </script>
+    
+    <!-- Wishlist Script -->
+    <script src="{% static 'js/wishlist/wishlist.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

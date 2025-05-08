@@ -1,0 +1,296 @@
+{% extends 'base_with_wishlist.html' %}
+
+{% block title %}Products - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Products</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'store:product_list' %}">
+                        <!-- Categories -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Categories</h6>
+                            <div class="form-group">
+                                {% for category in categories %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="category" id="category-{{ category.id }}" value="{{ category.slug }}" {% if current_category == category.slug %}checked{% endif %}>
+                                    <label class="form-check-label" for="category-{{ category.id }}">
+                                        {{ category.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Brands -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Brands</h6>
+                            <div class="form-group">
+                                {% for brand in brands %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="brand" id="brand-{{ brand.id }}" value="{{ brand.slug }}" {% if current_brand == brand.slug %}checked{% endif %}>
+                                    <label class="form-check-label" for="brand-{{ brand.id }}">
+                                        {{ brand.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Price Range</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="min-price" class="form-label">Min</label>
+                                        <input type="number" class="form-control" id="min-price" name="min_price" value="{{ current_min_price }}" min="0">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="max-price" class="form-label">Max</label>
+                                        <input type="number" class="form-control" id="max-price" name="max_price" value="{{ current_max_price }}" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        <a href="{% url 'store:product_list' %}" class="btn btn-outline-secondary w-100 mt-2">Clear Filters</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Grid -->
+        <div class="col-lg-9">
+            <!-- Sort Options -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Products</h3>
+                <div class="d-flex align-items-center">
+                    <label for="sort" class="me-2">Sort by:</label>
+                    <select id="sort" class="form-select" onchange="location = this.value;">
+                        <option value="{% url 'store:product_list' %}?sort=default" {% if current_sort == 'default' %}selected{% endif %}>Default</option>
+                        <option value="{% url 'store:product_list' %}?sort=price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="{% url 'store:product_list' %}?sort=price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="{% url 'store:product_list' %}?sort=newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="{% url 'store:product_list' %}?sort=rating" {% if current_sort == 'rating' %}selected{% endif %}>Top Rated</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Products -->
+            <div class="row">
+                {% for product in page_obj %}
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="card product-card h-100">
+                        <div class="position-relative">
+                            {% if product.is_on_sale %}
+                            <span class="badge bg-danger position-absolute top-0 start-0 m-2">SALE</span>
+                            {% endif %}
+                            
+                            <!-- Wishlist Toggle Button -->
+                            {% if user.is_authenticated %}
+                            <button type="button" class="btn btn-sm position-absolute top-0 end-0 m-2 wishlist-toggle" 
+                                    data-product-id="{{ product.id }}">
+                                <i class="{% if product.id in wishlist_products %}fas text-danger{% else %}far{% endif %} fa-heart wishlist-icon"></i>
+                            </button>
+                            {% else %}
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-sm position-absolute top-0 end-0 m-2">
+                                <i class="far fa-heart"></i>
+                            </a>
+                            {% endif %}
+                            
+                            {% if product.get_thumbnail %}
+                            <img src="{{ product.get_thumbnail.url }}" class="card-img-top p-3" alt="{{ product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=Product" class="card-img-top p-3" alt="{{ product.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text small text-muted">{{ product.description|truncatechars:100 }}</p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        {% if product.is_on_sale %}
+                                        <span class="product-sale-price">${{ product.sale_price }}</span>
+                                        <span class="product-original-price ms-2">${{ product.price }}</span>
+                                        {% else %}
+                                        <span class="product-price">${{ product.price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="rating">
+                                        {% with ''|center:product.reviews.all|length as range %}
+                                        {% for _ in range %}
+                                        <i class="fas fa-star"></i>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        <span class="text-muted small">({{ product.reviews.count }})</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 mb-2">
+                                    <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary flex-grow-1">View Details</a>
+                                    <button type="button" class="btn btn-outline-primary quick-add-to-cart" 
+                                            data-product-id="{{ product.id }}" 
+                                            data-product-img="{% if product.get_thumbnail %}{{ product.get_thumbnail.url }}{% else %}https://via.placeholder.com/300x300?text=Product{% endif %}"
+                                            {% if product.stock == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                    <h4>No products found</h4>
+                    <p class="text-muted">Try adjusting your search or filter criteria</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Quick add to cart buttons
+        const quickAddButtons = document.querySelectorAll('.quick-add-to-cart');
+        
+        quickAddButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const productImgSrc = this.dataset.productImg;
+                
+                // Create a temporary image element for animation
+                const tempImg = document.createElement('img');
+                tempImg.src = productImgSrc;
+                tempImg.style.display = 'none';
+                document.body.appendChild(tempImg);
+                
+                // Get the button position for animation start point
+                const buttonRect = this.getBoundingClientRect();
+                tempImg.style.position = 'absolute';
+                tempImg.style.top = buttonRect.top + 'px';
+                tempImg.style.left = buttonRect.left + 'px';
+                tempImg.style.width = '80px';
+                tempImg.style.height = '80px';
+                tempImg.style.objectFit = 'contain';
+                
+                // Trigger animation
+                if (window.animateToCart) {
+                    window.animateToCart(tempImg, productId, 1);
+                }
+                
+                // Remove temp image after animation starts
+                setTimeout(() => {
+                    document.body.removeChild(tempImg);
+                }, 100);
+                
+                // Send AJAX request to add item to cart
+                fetch(`/cart/api/add/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        quantity: 1,
+                        override: false
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update cart count in navbar
+                        const cartBadge = document.querySelector('.cart-badge .badge');
+                        if (cartBadge) {
+                            cartBadge.textContent = data.cart_count;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding to cart:', error);
+                });
+            });
+        });
+        
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

@@ -5,6 +5,7 @@ from django.db.models import Q, Avg
 from django.core.paginator import Paginator
 from .models import Product, Category, Brand, Review, ReviewImage
 from .forms import ReviewForm, ReviewImageFormSet
+from wishlist.models import Wishlist
 
 def product_list(request):
     """
@@ -44,13 +45,22 @@ def product_list(request):
         products = products.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
     
     # Pagination
-    paginator = Paginator(products, 12)  # 12 products per page
+    paginator = Paginator(products, 12)  # Show 12 products per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Get all categories and brands for filtering sidebar
-    categories = Category.objects.filter(is_active=True)
+    # Get all categories and brands for filters
+    categories = Category.objects.filter(is_active=True, parent=None)
     brands = Brand.objects.filter(is_active=True)
+    
+    # Get user's wishlist products if authenticated
+    wishlist_products = []
+    if request.user.is_authenticated:
+        try:
+            wishlist = Wishlist.objects.get(user=request.user)
+            wishlist_products = list(wishlist.products.values_list('id', flat=True))
+        except Wishlist.DoesNotExist:
+            pass
     
     context = {
         'page_obj': page_obj,
@@ -61,8 +71,9 @@ def product_list(request):
         'current_min_price': min_price,
         'current_max_price': max_price,
         'current_sort': sort,
+        'wishlist_products': wishlist_products,
     }
-    return render(request, 'store/product_list.html', context)
+    return render(request, 'store/product_list_wishlist.html', context)
 
 def product_detail(request, slug):
     """
@@ -81,13 +92,23 @@ def product_detail(request, slug):
     # Calculate average rating
     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     
+    # Check if product is in user's wishlist
+    in_wishlist = False
+    if request.user.is_authenticated:
+        try:
+            wishlist = Wishlist.objects.get(user=request.user)
+            in_wishlist = product in wishlist.products.all()
+        except Wishlist.DoesNotExist:
+            pass
+    
     context = {
         'product': product,
         'related_products': related_products,
         'reviews': reviews,
         'avg_rating': avg_rating,
+        'in_wishlist': in_wishlist,
     }
-    return render(request, 'store/product_detail.html', context)
+    return render(request, 'store/product_detail_wishlist.html', context)
 
 def category_detail(request, slug):
     """

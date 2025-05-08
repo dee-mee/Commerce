@@ -131,7 +131,15 @@
                                         <span class="text-muted small">({{ product.reviews.count }})</span>
                                     </div>
                                 </div>
-                                <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary w-100">View Details</a>
+                                <div class="d-flex gap-2 mb-2">
+                                    <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary flex-grow-1">View Details</a>
+                                    <button type="button" class="btn btn-outline-primary quick-add-to-cart" 
+                                            data-product-id="{{ product.id }}" 
+                                            data-product-img="{% if product.get_thumbnail %}{{ product.get_thumbnail.url }}{% else %}https://via.placeholder.com/300x300?text=Product{% endif %}"
+                                            {% if product.stock == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -188,4 +196,87 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Quick add to cart buttons
+        const quickAddButtons = document.querySelectorAll('.quick-add-to-cart');
+        
+        quickAddButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const productImgSrc = this.dataset.productImg;
+                
+                // Create a temporary image element for animation
+                const tempImg = document.createElement('img');
+                tempImg.src = productImgSrc;
+                tempImg.style.display = 'none';
+                document.body.appendChild(tempImg);
+                
+                // Get the button position for animation start point
+                const buttonRect = this.getBoundingClientRect();
+                tempImg.style.position = 'absolute';
+                tempImg.style.top = buttonRect.top + 'px';
+                tempImg.style.left = buttonRect.left + 'px';
+                tempImg.style.width = '80px';
+                tempImg.style.height = '80px';
+                tempImg.style.objectFit = 'contain';
+                
+                // Trigger animation
+                if (window.animateToCart) {
+                    window.animateToCart(tempImg, productId, 1);
+                }
+                
+                // Remove temp image after animation starts
+                setTimeout(() => {
+                    document.body.removeChild(tempImg);
+                }, 100);
+                
+                // Send AJAX request to add item to cart
+                fetch(`/cart/api/add/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        quantity: 1,
+                        override: false
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update cart count in navbar
+                        const cartBadge = document.querySelector('.cart-badge .badge');
+                        if (cartBadge) {
+                            cartBadge.textContent = data.cart_count;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding to cart:', error);
+                });
+            });
+        });
+        
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
 {% endblock %}

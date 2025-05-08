@@ -1,0 +1,61 @@
+/**
+ * Wishlist styling
+ */
+
+/* Wishlist icon styling */
+.wishlist-icon {
+    transition: color 0.3s ease;
+}
+
+.wishlist-icon.active,
+.wishlist-btn.active .wishlist-icon,
+.wishlist-toggle.active .wishlist-icon {
+    color: red !important;
+}
+
+/* Wishlist button styling */
+.wishlist-btn.active,
+.wishlist-toggle.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Wishlist toggle button (floating) */
+.wishlist-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.wishlist-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.wishlist-toggle.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.wishlist-toggle.active .wishlist-icon {
+    color: white !important;
+}
+
+/* Toast styling */
+#toast-container {
+    z-index: 9999;
+}
+
+.toast-wishlist-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.toast-wishlist-remove {
+    background-color: #dc3545;
+    color: white;
+}

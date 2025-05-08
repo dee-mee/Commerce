@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "payment",
     "dashboard",
     "auth_app",
+    "wishlist",
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "cart.context_processors.cart",
+                "wishlist.context_processors.wishlist_count",
             ],
         },
     },

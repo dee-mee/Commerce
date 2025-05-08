@@ -17,6 +17,19 @@
             --light-color: #f8f9fa;
         }
         
+        /* Cart Animation */
+        .cart-animation-item {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: transform 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.8s ease-out;
+            transform: scale(0.4);
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
         /* Header */
         .navbar-brand {
             font-weight: bold;
@@ -301,6 +314,9 @@
         {% block content %}{% endblock %}
     </main>
     
+    <!-- Cart Animation Container -->
+    <div id="cart-animation-container"></div>
+    
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -362,6 +378,78 @@
     
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Cart Animation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to animate item to cart
+            window.animateToCart = function(productImg, productId, quantity = 1) {
+                // Get the source image and cart position
+                const sourceImg = productImg;
+                const cartIcon = document.querySelector('.cart-badge');
+                
+                if (!sourceImg || !cartIcon) return;
+                
+                // Get positions
+                const sourceRect = sourceImg.getBoundingClientRect();
+                const cartRect = cartIcon.getBoundingClientRect();
+                
+                // Create animation element
+                const animationItem = document.createElement('div');
+                animationItem.className = 'cart-animation-item';
+                animationItem.style.width = '80px';
+                animationItem.style.height = '80px';
+                
+                // Set initial position
+                animationItem.style.top = sourceRect.top + 'px';
+                animationItem.style.left = sourceRect.left + 'px';
+                
+                // Create image element
+                const imgElement = document.createElement('img');
+                imgElement.src = sourceImg.src;
+                imgElement.style.width = '100%';
+                imgElement.style.height = '100%';
+                imgElement.style.objectFit = 'contain';
+                
+                // Append to animation container
+                animationItem.appendChild(imgElement);
+                document.getElementById('cart-animation-container').appendChild(animationItem);
+                
+                // Trigger animation
+                setTimeout(() => {
+                    animationItem.style.opacity = '1';
+                    animationItem.style.transform = 'scale(1)';
+                }, 10);
+                
+                setTimeout(() => {
+                    // Animate to cart
+                    animationItem.style.top = (cartRect.top + cartRect.height/2 - 40) + 'px';
+                    animationItem.style.left = (cartRect.left + cartRect.width/2 - 40) + 'px';
+                    animationItem.style.transform = 'scale(0.3)';
+                    
+                    // Update cart count
+                    setTimeout(() => {
+                        // Fade out
+                        animationItem.style.opacity = '0';
+                        
+                        // Remove element after animation
+                        setTimeout(() => {
+                            document.getElementById('cart-animation-container').removeChild(animationItem);
+                            
+                            // Animate cart badge
+                            const badge = document.querySelector('.cart-badge .badge');
+                            if (badge) {
+                                badge.classList.add('animate__animated', 'animate__rubberBand');
+                                setTimeout(() => {
+                                    badge.classList.remove('animate__animated', 'animate__rubberBand');
+                                }, 1000);
+                            }
+                        }, 300);
+                    }, 500);
+                }, 300);
+            };
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

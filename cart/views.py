@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+from django.http import JsonResponse
+import json
 from store.models import Product, ProductVariant
 from .cart import Cart
 from .forms import CartAddProductForm
@@ -90,3 +92,59 @@ def cart_remove(request, product_id):
     cart.remove(product_id)
     messages.success(request, 'Item removed from cart.')
     return redirect('cart:cart_detail')
+
+
+@require_POST
+def cart_add_ajax(request, product_id):
+    """
+    Add a product to the cart via AJAX
+    """
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id, is_active=True)
+    
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        quantity = int(data.get('quantity', 1))
+        override_quantity = data.get('override', False)
+        variant_id = data.get('variant', None)
+        
+        # Check if variant exists and belongs to the product
+        if variant_id:
+            try:
+                variant = ProductVariant.objects.get(id=variant_id, product=product)
+                # Check if variant has stock
+                if variant.stock_override is not None and variant.stock_override < quantity:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Sorry, only {variant.stock_override} items in stock for this variant.'
+                    })
+            except ProductVariant.DoesNotExist:
+                variant_id = None
+        
+        # Check if product has stock
+        if not variant_id and product.stock < quantity:
+            return JsonResponse({
+                'success': False,
+                'error': f'Sorry, only {product.stock} items in stock.'
+            })
+        
+        # Add product to cart
+        cart.add(
+            product=product,
+            quantity=quantity,
+            override_quantity=override_quantity,
+            variant_id=variant_id
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{product.name} added to your cart.',
+            'cart_count': len(cart)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
