@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}My Addresses - ShopEase{% endblock %}
+{% block title %}Address Book - ShopEase{% endblock %}
 
 {% block content %}
 <div class="container mt-4 mb-5">
@@ -8,7 +8,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">My Addresses</li>
+            <li class="breadcrumb-item active" aria-current="page">Address Book</li>
         </ol>
     </nav>
     
@@ -62,7 +62,7 @@
                         </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+                            <a class="nav-link text-danger" href="{% url 'logout' %}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a>
                         </li>
@@ -71,49 +71,67 @@
             </div>
         </div>
         
-        <!-- Addresses -->
+        <!-- Address Book -->
         <div class="col-lg-9">
             <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">My Addresses</h5>
-                    <a href="{% url 'accounts:address_create' %}" class="btn btn-light btn-sm">
-                        <i class="fas fa-plus me-2"></i>Add New Address
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Address Book</h5>
+                    <a href="{% url 'accounts:address_create' %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add New Address
                     </a>
                 </div>
                 <div class="card-body">
                     {% if addresses %}
-                    <div class="row">
+                    <div class="address-list">
                         {% for address in addresses %}
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100 {% if address.is_default %}border-primary{% else %}border{% endif %}">
-                                <div class="card-header {% if address.is_default %}bg-primary text-white{% else %}bg-light{% endif %}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">
-                                            {% if address.address_type == 'B' %}
-                                            <i class="fas fa-file-invoice me-2"></i>Billing Address
-                                            {% elif address.address_type == 'S' %}
-                                            <i class="fas fa-shipping-fast me-2"></i>Shipping Address
-                                            {% endif %}
-                                            {% if address.is_default %}<span class="badge bg-light text-primary ms-2">Default</span>{% endif %}
-                                        </h6>
-                                        <div>
-                                            <a href="{% url 'accounts:address_edit' address.id %}" class="btn btn-sm {% if address.is_default %}btn-light{% else %}btn-outline-primary{% endif %}">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{% url 'accounts:address_delete' address.id %}" class="btn btn-sm {% if address.is_default %}btn-light{% else %}btn-outline-danger{% endif %}">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
+                        <div class="address-item mb-3 p-3 border {% if address.is_default %}border-success{% endif %}">
+                            <div class="row">
+                                <!-- User Icon -->
+                                <div class="col-auto d-flex align-items-center">
+                                    <div class="user-icon bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user text-secondary"></i>
                                     </div>
                                 </div>
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ address.full_name }}</h6>
-                                    <address class="mb-0">
-                                        {{ address.address_line }}<br>
-                                        {{ address.city }}, {{ address.state }} {{ address.postal_code }}<br>
-                                        {{ address.country.name }}<br>
-                                        Phone: {{ address.phone }}
-                                    </address>
+                                
+                                <!-- Address Details -->
+                                <div class="col">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1 fw-bold">{{ address.full_name }}</h6>
+                                        <div>
+                                            {% if address.is_default %}
+                                            <span class="badge bg-success text-white">Default</span>
+                                            {% endif %}
+                                            {% if address.address_type == 'S' %}
+                                            <span class="badge bg-info text-white">Shipping</span>
+                                            {% elif address.address_type == 'B' %}
+                                            <span class="badge bg-primary text-white">Billing</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary mb-1">
+                                        <i class="fas fa-phone me-2"></i>{{ address.phone }}
+                                    </div>
+                                    <div class="text-secondary mb-1">
+                                        <i class="fas fa-map-marker-alt me-2"></i>{{ address.address_line }}, {{ address.city }}, {{ address.state }} {{ address.postal_code }}, {{ address.country.name }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="col-auto d-flex flex-column justify-content-center">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" {% if address.is_default %}checked disabled{% endif %} id="defaultCheck{{ address.id }}">
+                                        <label class="form-check-label" for="defaultCheck{{ address.id }}">
+                                            Set the default address
+                                        </label>
+                                    </div>
+                                    <div class="d-flex">
+                                        <a href="{% url 'accounts:address_edit' address.id %}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <a href="{% url 'accounts:address_delete' address.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -124,7 +142,7 @@
                         <i class="fas fa-map-marker-alt fa-4x mb-3 text-muted"></i>
                         <h4>No addresses found</h4>
                         <p class="text-muted mb-4">You haven't added any addresses yet.</p>
-                        <a href="{% url 'accounts:address_create' %}" class="btn btn-primary">
+                        <a href="{% url 'accounts:address_create' %}" class="btn btn-danger">
                             <i class="fas fa-plus me-2"></i>Add New Address
                         </a>
                     </div>
@@ -134,4 +152,34 @@
         </div>
     </div>
 </div>
+
+<style>
+    .address-item {
+        border-radius: 5px;
+        transition: all 0.2s ease;
+    }
+    
+    .address-item:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .user-icon {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .btn-danger {
+        background-color: #ff0000;
+        border-color: #ff0000;
+    }
+    
+    .btn-danger:hover {
+        background-color: #d90000;
+        border-color: #d90000;
+    }
+</style>
 {% endblock %}

@@ -42,7 +42,7 @@
                             <div class="form-group">
                                 {% for brand in brands %}
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="brand" id="brand-{{ brand.id }}" value="{{ brand.slug }}" {% if current_brand == brand.slug %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" name="brand" id="brand-{{ brand.id }}" value="{{ brand.slug }}" {% if brand.slug in current_brands %}checked{% endif %}>
                                     <label class="form-check-label" for="brand-{{ brand.id }}">
                                         {{ brand.name }}
                                     </label>
@@ -142,9 +142,13 @@
                                         {% endif %}
                                     </div>
                                     <div class="rating">
-                                        {% with ''|center:product.get_avg_rating|length as range %}
-                                        {% for _ in range %}
-                                        <i class="fas fa-star"></i>
+                                        {% with product.get_avg_rating as avg_rating %}
+                                        {% for i in "12345"|make_list %}
+                                            {% if forloop.counter <= avg_rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                            <i class="far fa-star text-muted"></i>
+                                            {% endif %}
                                         {% endfor %}
                                         {% endwith %}
                                         <span class="text-muted small">({{ product.reviews.count }})</span>

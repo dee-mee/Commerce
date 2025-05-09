@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load order_filters %}
 
 {% block title %}My Orders - ShopEase{% endblock %}
 
@@ -12,89 +13,448 @@
         </ol>
     </nav>
     
-    <h2 class="mb-4">My Orders</h2>
-    
-    {% if orders %}
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Order History</h5>
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="list-group">
+                <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user me-2"></i> My Account
+                </a>
+                <a href="{% url 'orders:order_list' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-shopping-bag me-2"></i> Orders
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-envelope me-2"></i> Inbox
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-star me-2"></i> Pending Reviews
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-ticket-alt me-2"></i> Vouchers
+                </a>
+                <a href="{% url 'wishlist:wishlist_detail' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart me-2"></i> Wishlist
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Followed Sellers
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-history me-2"></i> Recently Viewed
+                </a>
+                <div class="dropdown-divider my-2"></div>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-cog me-2"></i> Account Management
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{% url 'accounts:address_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-map-marker-alt me-2"></i> Address Book
+                </a>
+                {% if not user.is_vendor %}
+                <a href="{% url 'accounts:vendor_register' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Become a Vendor
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:vendor_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Vendor Dashboard
+                </a>
+                {% endif %}
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Order #</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Payment</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in orders %}
-                        <tr>
-                            <td>{{ order.id }}</td>
-                            <td>{{ order.created_at|date:"M d, Y" }}</td>
-                            <td>${{ order.total_amount }}</td>
-                            <td>
-                                {% if order.status == 'pending' %}
-                                <span class="badge bg-warning text-dark">Pending</span>
-                                {% elif order.status == 'processing' %}
-                                <span class="badge bg-info">Processing</span>
-                                {% elif order.status == 'shipped' %}
-                                <span class="badge bg-primary">Shipped</span>
-                                {% elif order.status == 'delivered' %}
-                                <span class="badge bg-success">Delivered</span>
-                                {% elif order.status == 'cancelled' %}
-                                <span class="badge bg-danger">Cancelled</span>
-                                {% elif order.status == 'refunded' %}
-                                <span class="badge bg-secondary">Refunded</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if order.payment_status == 'pending' %}
-                                <span class="badge bg-warning text-dark">Pending</span>
-                                {% elif order.payment_status == 'paid' %}
-                                <span class="badge bg-success">Paid</span>
-                                {% elif order.payment_status == 'failed' %}
-                                <span class="badge bg-danger">Failed</span>
-                                {% elif order.payment_status == 'refunded' %}
-                                <span class="badge bg-secondary">Refunded</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                {% if order.status == 'pending' %}
-                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
-                                    <i class="fas fa-times"></i> Cancel
-                                </a>
-                                {% endif %}
-                                {% if order.status == 'delivered' and not order.return_requests.exists %}
-                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-undo"></i> Return
-                                </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        
+        <!-- Orders Content -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">My Orders</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Order Status Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="orderTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="unpaid-tab" data-bs-toggle="tab" data-bs-target="#unpaid" type="button" role="tab" aria-controls="unpaid" aria-selected="true">
+                                Unpaid
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="to-be-shipped-tab" data-bs-toggle="tab" data-bs-target="#to-be-shipped" type="button" role="tab" aria-controls="to-be-shipped" aria-selected="false">
+                                To be Shipped
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shipped-tab" data-bs-toggle="tab" data-bs-target="#shipped" type="button" role="tab" aria-controls="shipped" aria-selected="false">
+                                Shipped
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab" aria-controls="completed" aria-selected="false">
+                                Completed
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab" aria-controls="cancelled" aria-selected="false">
+                                Cancelled
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    {% if orders %}
+                    <div class="tab-content" id="orderTabsContent">
+                        <div class="tab-pane fade show active" id="unpaid" role="tabpanel" aria-labelledby="unpaid-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% if order.status == 'pending' %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif order.status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.payment_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.payment_status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                                {% elif order.payment_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif order.payment_status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                {% if order.status == 'pending' %}
+                                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                                {% endif %}
+                                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="to-be-shipped" role="tabpanel" aria-labelledby="to-be-shipped-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% if order.status == 'processing' %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif order.status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.payment_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.payment_status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                                {% elif order.payment_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif order.payment_status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                {% if order.status == 'pending' %}
+                                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                                {% endif %}
+                                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="shipped" role="tabpanel" aria-labelledby="shipped-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% if order.status == 'shipped' %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif order.status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.payment_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.payment_status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                                {% elif order.payment_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif order.payment_status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                {% if order.status == 'pending' %}
+                                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                                {% endif %}
+                                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% if order.status == 'delivered' %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif order.status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.payment_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.payment_status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                                {% elif order.payment_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif order.payment_status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                {% if order.status == 'pending' %}
+                                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                                {% endif %}
+                                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% if order.status == 'cancelled' %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ order.total_amount }}</td>
+                                            <td>
+                                                {% if order.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                                {% elif order.status == 'shipped' %}
+                                                <span class="badge bg-primary">Shipped</span>
+                                                {% elif order.status == 'delivered' %}
+                                                <span class="badge bg-success">Delivered</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif order.status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.payment_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif order.payment_status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                                {% elif order.payment_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif order.payment_status == 'refunded' %}
+                                                <span class="badge bg-secondary">Refunded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                {% if order.status == 'pending' %}
+                                                <a href="{% url 'orders:order_cancel' order.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a>
+                                                {% endif %}
+                                                {% if order.status == 'delivered' and not order.return_requests.exists %}
+                                                <a href="{% url 'orders:return_request' order.id %}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-bag fa-4x mb-3 text-muted"></i>
+                        <h3>No orders found</h3>
+                        <p class="text-muted mb-4">You haven't placed any orders yet.</p>
+                        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-shopping-bag fa-4x mb-3 text-muted"></i>
-        <h3>No orders found</h3>
-        <p class="text-muted mb-4">You haven't placed any orders yet.</p>
-        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">
-            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
-        </a>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

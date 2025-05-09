@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils import timezone
 from accounts.models import User, VendorProfile
 
 class Category(models.Model):
@@ -108,6 +109,17 @@ class Product(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+        
+    def get_avg_rating(self):
+        """
+        Calculate the average rating for this product
+        Returns an integer from 0-5
+        """
+        reviews = self.reviews.filter(approved=True)
+        if reviews.exists():
+            total = sum(review.rating for review in reviews)
+            return round(total / reviews.count())
+        return 0
 
 class ProductImage(models.Model):
     """
@@ -201,3 +213,108 @@ class ReviewImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.review}"
+
+
+class FlashSale(models.Model):
+    """
+    Flash Sale model for time-limited product promotions
+    """
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Flash Sale'
+        verbose_name_plural = 'Flash Sales'
+        ordering = ('-start_time',)
+    
+    def __str__(self):
+        return self.title
+    
+    def is_ongoing(self):
+        now = timezone.now()
+        return self.start_time <= now <= self.end_time
+    
+    def time_left(self):
+        if not self.is_ongoing():
+            return None
+        
+        now = timezone.now()
+        time_remaining = self.end_time - now
+        return time_remaining
+    
+    def time_left_display(self):
+        time_remaining = self.time_left()
+        if not time_remaining:
+            return "Expired"
+        
+        seconds = time_remaining.total_seconds()
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        
+        return f"{hours:02d}h : {minutes:02d}m : {secs:02d}s"
+
+
+class FlashSaleItem(models.Model):
+    """
+    Products included in a flash sale with special pricing
+    """
+    flash_sale = models.ForeignKey(FlashSale, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='flash_sale_items')
+    discount_percentage = models.PositiveIntegerField(help_text='Discount percentage (e.g., 20 for 20% off)')
+    flash_sale_price = models.DecimalField(max_digits=10, decimal_places=2)
+    original_price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock_quantity = models.PositiveIntegerField(default=0)
+    initial_stock_quantity = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        verbose_name = 'Flash Sale Item'
+        verbose_name_plural = 'Flash Sale Items'
+        unique_together = ('flash_sale', 'product')
+    
+    def __str__(self):
+        return f"{self.product.name} in {self.flash_sale.title}"
+    
+    def save(self, *args, **kwargs):
+        # Calculate flash sale price if not provided
+        if not self.flash_sale_price and self.product and self.discount_percentage:
+            original_price = self.product.get_price()
+            self.original_price = original_price
+            self.flash_sale_price = original_price * (1 - self.discount_percentage / 100)
+        
+        # Set initial stock quantity if not provided
+        if not self.initial_stock_quantity and self.stock_quantity:
+            self.initial_stock_quantity = self.stock_quantity
+            
+        super().save(*args, **kwargs)
+    
+    def get_remaining_percentage(self):
+        if self.initial_stock_quantity == 0:
+            return 0
+        return int((self.stock_quantity / self.initial_stock_quantity) * 100)
+    
+    def items_left(self):
+        return self.stock_quantity
+
+
+class FlashSaleNotification(models.Model):
+    """
+    Model for users to subscribe to flash sale notifications
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='flash_sale_notifications')
+    flash_sale = models.ForeignKey(FlashSale, on_delete=models.CASCADE, related_name='notifications')
+    is_notified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Flash Sale Notification'
+        verbose_name_plural = 'Flash Sale Notifications'
+        unique_together = ('user', 'flash_sale')
+    
+    def __str__(self):
+        return f"{self.user.username}'s notification for {self.flash_sale.title}"

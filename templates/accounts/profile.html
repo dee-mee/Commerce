@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}My Profile - ShopEase{% endblock %}
+{% block title %}My Account - ShopEase{% endblock %}
 
 {% block content %}
 <div class="container mt-4 mb-5">
@@ -8,127 +8,231 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+            <li class="breadcrumb-item active" aria-current="page">My Account</li>
         </ol>
     </nav>
+    
+    <h3 class="mb-4">Account Overview</h3>
     
     <div class="row">
         <!-- Sidebar -->
         <div class="col-lg-3 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">My Account</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
-                        {% else %}
-                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
-                            <i class="fas fa-user fa-4x text-secondary"></i>
-                        </div>
-                        {% endif %}
-                        <h5>{{ user.get_full_name|default:user.username }}</h5>
-                        <p class="text-muted small">Member since {{ user.date_joined|date:"F Y" }}</p>
-                    </div>
-                    
-                    <ul class="nav flex-column nav-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'accounts:profile' %}">
-                                <i class="fas fa-user me-2"></i>Profile
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:address_list' %}">
-                                <i class="fas fa-map-marker-alt me-2"></i>Addresses
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'orders:order_list' %}">
-                                <i class="fas fa-shopping-bag me-2"></i>Orders
-                            </a>
-                        </li>
-                        {% if user.is_vendor %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:vendor_dashboard' %}">
-                                <i class="fas fa-store me-2"></i>Vendor Dashboard
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:vendor_register' %}">
-                                <i class="fas fa-store me-2"></i>Become a Vendor
-                            </a>
-                        </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link text-danger" href="{% url 'account_logout' %}">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <div class="list-group">
+                <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user me-2"></i> My Account
+                </a>
+                <a href="{% url 'orders:order_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-shopping-bag me-2"></i> Orders
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-envelope me-2"></i> Inbox
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-star me-2"></i> Pending Reviews
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-ticket-alt me-2"></i> Vouchers
+                </a>
+                <a href="{% url 'wishlist:wishlist_detail' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart me-2"></i> Wishlist
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Followed Sellers
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-history me-2"></i> Recently Viewed
+                </a>
+                <div class="dropdown-divider my-2"></div>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-cog me-2"></i> Account Management
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <i class="fas fa-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{% url 'accounts:address_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-map-marker-alt me-2"></i> Address Book
+                </a>
+                {% if not user.is_vendor %}
+                <a href="{% url 'accounts:vendor_register' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Become a Vendor
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:vendor_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store me-2"></i> Vendor Dashboard
+                </a>
+                {% endif %}
             </div>
         </div>
         
-        <!-- Profile Form -->
+        <!-- Main Content -->
         <div class="col-lg-9">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Edit Profile</h5>
+            <div class="row">
+                <!-- Account Details Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">ACCOUNT DETAILS</h5>
+                            <a href="#" class="text-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                                    <i class="fas fa-user fa-4x text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <h6>{{ user.get_full_name|default:user.username }}</h6>
+                                <p class="text-muted mb-0">{{ user.email }}</p>
+                                {% if user.phone %}
+                                <p class="text-muted mb-0">{{ user.phone }}</p>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                    <i class="fas fa-camera me-1"></i> Change Photo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                                {{ form.username.errors }}
-                                <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value }}" class="form-control {% if form.username.errors %}is-invalid{% endif %}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                                {{ form.email.errors }}
-                                <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" value="{{ form.email.value }}" class="form-control {% if form.email.errors %}is-invalid{% endif %}">
+                
+                <!-- Address Book Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">ADDRESS BOOK</h5>
+                            <a href="{% url 'accounts:address_list' %}" class="text-primary">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <h6>Your default shipping address:</h6>
+                            {% with default_address=user.addresses.all.first %}
+                            {% if default_address %}
+                            <address>
+                                {{ default_address.full_name }}<br>
+                                {{ default_address.address_line }}<br>
+                                {{ default_address.city }}, {{ default_address.state }}<br>
+                                {{ default_address.country.name }}<br>
+                                {{ default_address.phone }}
+                            </address>
+                            {% else %}
+                            <p class="text-muted">No default shipping address set.</p>
+                            <a href="{% url 'accounts:address_create' %}" class="btn btn-sm btn-outline-primary">Add Address</a>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Store Credit Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">STORE CREDIT</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Store credit balance: $0</h6>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
-                                {{ form.first_name.errors }}
-                                <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}" value="{{ form.first_name.value }}" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
-                                {{ form.last_name.errors }}
-                                <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}" value="{{ form.last_name.value }}" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}">
-                            </div>
+                    </div>
+                </div>
+                
+                <!-- Newsletter Preferences Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">NEWSLETTER PREFERENCES</h5>
                         </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone Number</label>
-                                {{ form.phone.errors }}
-                                <input type="tel" name="{{ form.phone.name }}" id="{{ form.phone.id_for_label }}" value="{{ form.phone.value }}" class="form-control {% if form.phone.errors %}is-invalid{% endif %}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.profile_picture.id_for_label }}" class="form-label">Profile Picture</label>
-                                {{ form.profile_picture.errors }}
-                                <input type="file" name="{{ form.profile_picture.name }}" id="{{ form.profile_picture.id_for_label }}" class="form-control {% if form.profile_picture.errors %}is-invalid{% endif %}">
-                                <div class="form-text">Current: {% if user.profile_picture %}{{ user.profile_picture.name }}{% else %}No image{% endif %}</div>
-                            </div>
+                        <div class="card-body">
+                            <p>Manage your email communications to stay updated with the latest news and offers.</p>
+                            <a href="#" class="btn btn-outline-primary">Edit Newsletter preferences</a>
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Save Changes
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                            {{ form.username.errors }}
+                            <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value }}" class="form-control {% if form.username.errors %}is-invalid{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email.errors }}
+                            <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" value="{{ form.email.value }}" class="form-control {% if form.email.errors %}is-invalid{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                            {{ form.first_name.errors }}
+                            <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}" value="{{ form.first_name.value }}" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                            {{ form.last_name.errors }}
+                            <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}" value="{{ form.last_name.value }}" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone Number</label>
+                            {{ form.phone.errors }}
+                            <input type="tel" name="{{ form.phone.name }}" id="{{ form.phone.id_for_label }}" value="{{ form.phone.value }}" class="form-control {% if form.phone.errors %}is-invalid{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.profile_picture.id_for_label }}" class="form-label">Profile Picture</label>
+                            {{ form.profile_picture.errors }}
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="me-3">
+                                    {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-user fa-2x text-secondary"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <input type="file" name="{{ form.profile_picture.name }}" id="{{ form.profile_picture.id_for_label }}" class="form-control {% if form.profile_picture.errors %}is-invalid{% endif %}" accept="image/*">
+                                    <div class="form-text">Recommended: Square image, at least 300x300 pixels</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
