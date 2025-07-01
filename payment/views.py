@@ -59,6 +59,11 @@ def payment_process(request, order_id):
             paid_at=timezone.now()
         )
         
+        # Clear the cart after successful payment
+        from cart.cart import Cart
+        cart = Cart(request)
+        cart.clear()
+        
         messages.success(request, 'Payment successful! Your order is now being processed.')
         return redirect('payment:completed')
     

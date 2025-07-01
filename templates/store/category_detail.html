@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - ShopEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'store:product_list' %}">Shop</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Category Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="lead text-muted">{{ category.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters and Sort -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <form method="get" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search in {{ category.name }}..." value="{{ request.GET.q }}">
+                    <button class="btn btn-outline-secondary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-8 text-md-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    Sort by
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item {% if sort == 'name' %}active{% endif %}" href="?sort=name">Name</a></li>
+                    <li><a class="dropdown-item {% if sort == '-created_at' %}active{% endif %}" href="?sort=-created_at">Newest</a></li>
+                    <li><a class="dropdown-item {% if sort == 'price' %}active{% endif %}" href="?sort=price">Price: Low to High</a></li>
+                    <li><a class="dropdown-item {% if sort == '-price' %}active{% endif %}" href="?sort=-price">Price: High to Low</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card product-card h-100">
+                <!-- Product Image -->
+                <div class="position-relative">
+                    {% if product.get_thumbnail %}
+                    <img src="{{ product.get_thumbnail.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% else %}
+                    <img src="{% static 'images/placeholder.png' %}" class="card-img-top" alt="{{ product.name }}">
+                    {% endif %}
+                    
+                    {% if product.is_on_sale %}
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger">Sale</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if product.is_new %}
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-primary">New</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Product Info -->
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-1">
+                        <a href="{{ product.get_absolute_url }}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                    </h5>
+                    <div class="mb-2">
+                        {% if product.rating %}
+                        <div class="rating">
+                            {% for i in ""|ljust:product.rating %}
+                            <i class="fas fa-star"></i>
+                            {% endfor %}
+                            {% for i in ""|ljust:5|slice:product.rating %}
+                            <i class="far fa-star"></i>
+                            {% endfor %}
+                            <small class="text-muted">({{ product.review_count }})</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        {% if product.sale_price %}
+                        <span class="product-sale-price me-2">${{ product.sale_price }}</span>
+                        <span class="product-original-price text-decoration-line-through">${{ product.price }}</span>
+                        {% else %}
+                        <span class="product-price">${{ product.price }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mt-auto">
+                        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="d-grid">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+            <h3>No products found</h3>
+            <p class="text-muted">We couldn't find any products in this category{% if request.GET.q %} matching your search{% endif %}.</p>
+            {% if request.GET.q %}
+            <a href="{{ request.path }}" class="btn btn-outline-primary">Clear Search</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if products.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ products.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for i in products.paginator.page_range %}
+            <li class="page-item {% if products.number == i %}active{% endif %}">
+                <a class="page-link" href="?page={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">{{ i }}</a>
+            </li>
+            {% endfor %}
+
+            {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ products.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
