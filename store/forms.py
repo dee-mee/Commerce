@@ -4,12 +4,13 @@ from .models import Review, ReviewImage
 
 class ReviewForm(forms.ModelForm):
     """Form for product reviews"""
+    rating = forms.IntegerField(widget=forms.HiddenInput(attrs={'id': 'rating-input'}))
+    
     class Meta:
         model = Review
         fields = ['rating', 'comment']
         widgets = {
-            'rating': forms.Select(attrs={'class': 'form-select'}),
-            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Share your experience with this product. What did you like or dislike?'}),
         }
 
 # Create a formset for review images

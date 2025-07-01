@@ -1,0 +1,149 @@
+<script>
+    // Function to update countdown timers
+    function updateCountdowns() {
+        document.querySelectorAll('.countdown-timer').forEach(timer => {
+            const endTime = new Date(timer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = endTime - now;
+            
+            if (timeLeft <= 0) {
+                timer.innerHTML = "Expired";
+                // Reload the page to refresh the flash sale after 5 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+                return;
+            }
+            
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            timer.innerHTML = `${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+        });
+    }
+    
+    // Add to cart functionality for flash sale items
+    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId;
+            const flashSaleItemId = this.dataset.flashSaleItemId;
+            
+            // Disable the button temporarily to prevent multiple clicks
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+            
+            fetch('/cart/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'product_id': productId,
+                    'quantity': 1,
+                    'flash_sale_item_id': flashSaleItemId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i> ${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Update cart count if you have a cart counter in your UI
+                    if (document.querySelector('.cart-count')) {
+                        document.querySelector('.cart-count').textContent = data.cart_count;
+                    }
+                    
+                    // If this is a flash sale item, update the stock display
+                    if (data.is_flash_sale) {
+                        // Get the product card
+                        const productCard = this.closest('.flash-product-card');
+                        
+                        // Update the progress bar
+                        const progressBar = productCard.querySelector('.progress-bar');
+                        if (progressBar) {
+                            progressBar.style.width = `${data.remaining_percentage}%`;
+                            progressBar.setAttribute('aria-valuenow', data.remaining_percentage);
+                        }
+                        
+                        // Update the items left text
+                        const itemsLeft = productCard.querySelector('.items-left');
+                        if (itemsLeft) {
+                            if (data.remaining_stock > 0) {
+                                itemsLeft.innerHTML = `<i class="fas fa-fire text-danger"></i> ${data.remaining_stock} items left`;
+                                
+                                // Re-enable the button
+                                this.disabled = false;
+                                this.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+                            } else {
+                                itemsLeft.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> Sold out</span>`;
+                                
+                                // Disable the button permanently
+                                this.disabled = true;
+                                this.innerHTML = '<i class="fas fa-times me-1"></i> Sold Out';
+                            }
+                        }
+                    } else {
+                        // Re-enable the button
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+                    }
+                } else {
+                    // Show error message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-exclamation-circle me-2"></i> ${data.error}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Re-enable the button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Re-enable the button
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+            });
+        });
+    });
+    
+    // Update countdowns immediately and then every second
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+</script>

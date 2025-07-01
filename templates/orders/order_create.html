@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load order_filters %}
 
 {% block title %}Checkout - ShopEase{% endblock %}
 
@@ -182,7 +183,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tax (10%):</span>
-                        <span>${{ cart.get_subtotal|floatformat:2|multiply:0.1 }}</span>
+                        <span>${{ cart.get_subtotal|multiply:'0.1'|floatformat:2 }}</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">

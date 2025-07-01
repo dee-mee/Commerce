@@ -3,7 +3,9 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.http import JsonResponse
 import json
-from store.models import Product, ProductVariant
+from django.db.models import F
+from django.utils import timezone
+from store.models import Product, ProductVariant, FlashSale, FlashSaleItem
 from .cart import Cart
 from .forms import CartAddProductForm
 
@@ -108,26 +110,52 @@ def cart_add_ajax(request, product_id):
         quantity = int(data.get('quantity', 1))
         override_quantity = data.get('override', False)
         variant_id = data.get('variant', None)
+        flash_sale_item_id = data.get('flash_sale_item_id', None)
         
-        # Check if variant exists and belongs to the product
-        if variant_id:
+        # Check if this is a flash sale item
+        flash_sale_item = None
+        if flash_sale_item_id:
             try:
-                variant = ProductVariant.objects.get(id=variant_id, product=product)
-                # Check if variant has stock
-                if variant.stock_override is not None and variant.stock_override < quantity:
+                now = timezone.now()
+                flash_sale_item = FlashSaleItem.objects.select_related('flash_sale').get(
+                    id=flash_sale_item_id,
+                    product=product,
+                    flash_sale__is_active=True,
+                    flash_sale__start_time__lte=now,
+                    flash_sale__end_time__gte=now
+                )
+                
+                # Check if flash sale item has stock
+                if flash_sale_item.stock_quantity < quantity:
                     return JsonResponse({
                         'success': False,
-                        'error': f'Sorry, only {variant.stock_override} items in stock for this variant.'
+                        'error': f'Sorry, only {flash_sale_item.stock_quantity} items left in this flash sale.',
+                        'stock_quantity': flash_sale_item.stock_quantity
                     })
-            except ProductVariant.DoesNotExist:
-                variant_id = None
+            except FlashSaleItem.DoesNotExist:
+                flash_sale_item = None
         
-        # Check if product has stock
-        if not variant_id and product.stock < quantity:
-            return JsonResponse({
-                'success': False,
-                'error': f'Sorry, only {product.stock} items in stock.'
-            })
+        # If not a flash sale or flash sale item doesn't exist, check regular stock
+        if not flash_sale_item:
+            # Check if variant exists and belongs to the product
+            if variant_id:
+                try:
+                    variant = ProductVariant.objects.get(id=variant_id, product=product)
+                    # Check if variant has stock
+                    if variant.stock_override is not None and variant.stock_override < quantity:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'Sorry, only {variant.stock_override} items in stock for this variant.'
+                        })
+                except ProductVariant.DoesNotExist:
+                    variant_id = None
+            
+            # Check if product has stock
+            if not variant_id and product.stock < quantity:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Sorry, only {product.stock} items in stock.'
+                })
         
         # Add product to cart
         cart.add(
@@ -136,6 +164,27 @@ def cart_add_ajax(request, product_id):
             override_quantity=override_quantity,
             variant_id=variant_id
         )
+        
+        # Update flash sale item stock if applicable
+        if flash_sale_item:
+            # Atomically decrement the stock to prevent race conditions
+            FlashSaleItem.objects.filter(id=flash_sale_item.id).update(
+                stock_quantity=F('stock_quantity') - quantity
+            )
+            
+            # Get the updated stock quantity
+            updated_item = FlashSaleItem.objects.get(id=flash_sale_item.id)
+            remaining_stock = updated_item.stock_quantity
+            remaining_percentage = updated_item.get_remaining_percentage()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{product.name} added to your cart.',
+                'cart_count': len(cart),
+                'is_flash_sale': True,
+                'remaining_stock': remaining_stock,
+                'remaining_percentage': remaining_percentage
+            })
         
         return JsonResponse({
             'success': True,

@@ -125,6 +125,17 @@ class Cart:
         """
         Save the cart to the session
         """
-        self.session[settings.CART_SESSION_ID] = self.cart
+        # Create a copy with only serializable data
+        cart_copy = {}
+        for key, item in self.cart.items():
+            cart_copy[key] = {
+                'quantity': item['quantity'],
+                'price': str(item['price'])
+            }
+            # Only include variant_id if it exists
+            if 'variant_id' in item:
+                cart_copy[key]['variant_id'] = item['variant_id']
+        
+        self.session[settings.CART_SESSION_ID] = cart_copy
         # Mark the session as modified
         self.session.modified = True

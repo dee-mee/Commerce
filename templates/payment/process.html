@@ -2,6 +2,51 @@
 
 {% block title %}Payment - ShopEase{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-check.border {
+        transition: all 0.3s ease;
+    }
+    .form-check.border:hover {
+        background-color: #f8f9fa;
+        border-color: #0d6efd !important;
+    }
+    .form-check.border input[type="radio"]:checked + label {
+        color: #0d6efd;
+    }
+    .form-check.border input[type="radio"]:checked + label .text-muted {
+        color: #0d6efd !important;
+    }
+    .form-check.border input[type="radio"]:checked ~ .form-check-label {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentForm = document.querySelector('form');
+    const submitButton = paymentForm.querySelector('button[type="submit"]');
+    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+    
+    // Check if a payment method is selected
+    function updateSubmitButton() {
+        const isMethodSelected = Array.from(paymentMethods).some(method => method.checked);
+        submitButton.disabled = !isMethodSelected;
+    }
+    
+    // Add event listeners to payment method radios
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', updateSubmitButton);
+    });
+    
+    // Initial check
+    updateSubmitButton();
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4 mb-5">
     <!-- Breadcrumb -->
@@ -45,11 +90,55 @@
                     <hr>
                     
                     <div class="text-center">
-                        <p>You will be redirected to our secure payment processor to complete your payment.</p>
+                        <p>Please select a payment method to complete your order.</p>
                         <form action="{% url 'payment:process' order.id %}" method="post">
                             {% csrf_token %}
+                            
+                            <div class="row justify-content-center mb-4">
+                                <div class="col-md-8">
+                                    <div class="form-check mb-3 border p-3 rounded" style="cursor: pointer;" onclick="document.getElementById('credit_card').click()">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="credit_card" value="credit_card" checked style="cursor: pointer;">
+                                        <label class="form-check-label d-flex align-items-center w-100" for="credit_card" style="cursor: pointer;">
+                                            <div class="me-3">
+                                                <i class="fas fa-credit-card fa-2x text-primary"></i>
+                                            </div>
+                                            <div class="text-start">
+                                                <strong>Credit Card</strong>
+                                                <div class="text-muted small">Pay securely with your credit card</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3 border p-3 rounded" style="cursor: pointer;" onclick="document.getElementById('paypal').click()">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="paypal" value="paypal" style="cursor: pointer;">
+                                        <label class="form-check-label d-flex align-items-center w-100" for="paypal" style="cursor: pointer;">
+                                            <div class="me-3">
+                                                <i class="fab fa-paypal fa-2x text-primary"></i>
+                                            </div>
+                                            <div class="text-start">
+                                                <strong>PayPal</strong>
+                                                <div class="text-muted small">Pay securely with your PayPal account</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3 border p-3 rounded" style="cursor: pointer;" onclick="document.getElementById('bank_transfer').click()">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="bank_transfer" value="bank_transfer" style="cursor: pointer;">
+                                        <label class="form-check-label d-flex align-items-center w-100" for="bank_transfer" style="cursor: pointer;">
+                                            <div class="me-3">
+                                                <i class="fas fa-university fa-2x text-success"></i>
+                                            </div>
+                                            <div class="text-start">
+                                                <strong>Bank Transfer</strong>
+                                                <div class="text-muted small">Pay directly from your bank account</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-lock me-2"></i>Proceed to Payment
+                                <i class="fas fa-lock me-2"></i>Complete Payment
                             </button>
                         </form>
                     </div>

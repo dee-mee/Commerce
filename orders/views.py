@@ -23,6 +23,11 @@ def order_create(request):
     addresses = Address.objects.filter(user=request.user)
     shipping_methods = ShippingMethod.objects.filter(is_active=True)
     
+    # If user has no addresses, redirect to address creation
+    if not addresses.exists():
+        messages.warning(request, 'Please add a shipping address before proceeding to checkout')
+        return redirect('accounts:address_create')
+    
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
@@ -52,8 +57,9 @@ def order_create(request):
             order.shipping_amount = shipping_method.price
             
             # Calculate total
-            subtotal = cart.get_subtotal()
-            tax_amount = subtotal * 0.1  # 10% tax (example)
+            from decimal import Decimal
+            subtotal = Decimal(str(cart.get_subtotal()))
+            tax_amount = subtotal * Decimal('0.1')  # 10% tax (example)
             total = subtotal + order.shipping_amount + tax_amount
             
             order.tax_amount = tax_amount

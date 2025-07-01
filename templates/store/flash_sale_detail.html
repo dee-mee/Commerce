@@ -1,0 +1,577 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ flash_sale.title }} - ShopEase{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flash-sale-header {
+        background: linear-gradient(to right, #ff416c, #ff4b2b);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .countdown-container {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+        display: inline-block;
+    }
+    
+    .countdown-timer {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .countdown-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        margin-bottom: 0;
+    }
+    
+    .product-card {
+        transition: transform 0.3s;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: #ff4b2b;
+        color: white;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 20px;
+        z-index: 2;
+    }
+    
+    .stock-progress {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    .items-left {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .original-price {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .sale-price {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #ff4b2b;
+    }
+    
+    .wishlist-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .wishlist-btn:hover {
+        background-color: rgba(255, 255, 255, 1);
+    }
+    
+    .wishlist-btn i {
+        color: #ccc;
+    }
+    
+    .wishlist-btn.active i {
+        color: #ff4b2b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flash-sale-header text-center">
+    <div class="container">
+        <h1><i class="fas fa-bolt me-2"></i> {{ flash_sale.title }}</h1>
+        <p class="lead">{{ flash_sale.description }}</p>
+        
+        {% if is_active %}
+        <div class="countdown-container">
+            <div class="row">
+                <div class="col">
+                    <div class="countdown-timer" id="hours">00</div>
+                    <p class="countdown-label">Hours</p>
+                </div>
+                <div class="col">
+                    <div class="countdown-timer" id="minutes">00</div>
+                    <p class="countdown-label">Minutes</p>
+                </div>
+                <div class="col">
+                    <div class="countdown-timer" id="seconds">00</div>
+                    <p class="countdown-label">Seconds</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+            {% if flash_sale.start_time > current_time %}
+            <div class="alert alert-warning d-inline-block">
+                This sale hasn't started yet. Starts in {{ flash_sale.start_time|timeuntil }}.
+            </div>
+            {% else %}
+            <div class="alert alert-danger d-inline-block">
+                This sale has ended.
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'store:flash_sale_list' %}">Flash Sales</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ flash_sale.title }}</li>
+        </ol>
+    </nav>
+    
+    {% if sale_items %}
+    <div class="row">
+        {% for item in sale_items %}
+        <div class="col-md-3 mb-4">
+            <div class="card product-card h-100" data-item-id="{{ item.id }}">
+                <!-- Discount Badge -->
+                <div class="discount-badge">-{{ item.discount_percentage }}%</div>
+                
+                <!-- Wishlist Button -->
+                {% if user.is_authenticated %}
+                <button class="wishlist-btn {% if item.product.id in wishlist_products %}active{% endif %}" 
+                        data-product-id="{{ item.product.id }}" 
+                        data-action="{% if item.product.id in wishlist_products %}remove{% else %}add{% endif %}">
+                    <i class="fas fa-heart"></i>
+                </button>
+                {% endif %}
+                
+                <!-- Product Image -->
+                <a href="{{ item.product.get_absolute_url }}">
+                    {% if item.product.images.all %}
+                    <img src="{{ item.product.images.first.image.url }}" 
+                         class="card-img-top" 
+                         alt="{{ item.product.name }}"
+                         style="height: 200px; object-fit: contain; padding: 15px;">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300" 
+                         class="card-img-top" 
+                         alt="{{ item.product.name }}"
+                         style="height: 200px; object-fit: contain; padding: 15px;">
+                    {% endif %}
+                </a>
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">
+                        <a href="{{ item.product.get_absolute_url }}" class="text-decoration-none text-dark">
+                            {{ item.product.name }}
+                        </a>
+                    </h5>
+                    
+                    <div class="mt-auto">
+                        <!-- Price -->
+                        <div class="mb-2">
+                            <span class="original-price">KSh {{ item.original_price }}</span>
+                            <div class="sale-price">KSh {{ item.flash_sale_price }}</div>
+                        </div>
+                        
+                        <!-- Stock Progress -->
+                        <div class="progress stock-progress mb-2">
+                            <div class="progress-bar bg-success" 
+                                 role="progressbar" 
+                                 style="width: {{ item.get_remaining_percentage }}%" 
+                                 aria-valuenow="{{ item.get_remaining_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <p class="items-left mb-3">
+                            {% if item.stock_quantity > 0 %}
+                            <i class="fas fa-fire text-danger"></i> {{ item.items_left }} items left
+                            {% else %}
+                            <span class="text-danger"><i class="fas fa-times-circle"></i> Sold out</span>
+                            {% endif %}
+                        </p>
+                        
+                        <!-- Add to Cart Button -->
+                        <div class="d-grid">
+                            <button class="btn btn-primary add-to-cart-btn" 
+                                    data-product-id="{{ item.product.id }}"
+                                    data-flash-sale-item-id="{{ item.id }}"
+                                    data-item-index="{{ forloop.counter0 }}"
+                                    {% if item.stock_quantity <= 0 %}
+                                    disabled
+                                    {% endif %}>
+                                {% if item.stock_quantity > 0 %}
+                                <i class="fas fa-shopping-cart me-2"></i> Add to Cart
+                                {% else %}
+                                <i class="fas fa-times me-2"></i> Sold Out
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> No products available in this flash sale.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Countdown Timer
+    function updateCountdown() {
+        {% if is_active %}
+        const endTime = new Date("{{ flash_sale.end_time|date:'Y-m-d H:i:s' }}").getTime();
+        const now = new Date().getTime();
+        const timeLeft = endTime - now;
+        
+        if (timeLeft <= 0) {
+            document.getElementById('hours').textContent = '00';
+            document.getElementById('minutes').textContent = '00';
+            document.getElementById('seconds').textContent = '00';
+            
+            // Reload the page to show the sale as ended
+            location.reload();
+            return;
+        }
+        
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+        document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        {% endif %}
+    }
+    
+    // Function to check if page needs refreshing
+    function checkForRefresh() {
+        {% if is_active %}
+        const endTime = new Date('{{ flash_sale.end_time|date:"Y-m-d H:i:s" }}').getTime();
+        const now = new Date().getTime();
+        
+        if (endTime <= now) {
+            // Show a notification before refreshing
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-sync-alt me-2"></i> This flash sale has ended! Refreshing page...
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Refresh the page after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+        {% elif flash_sale.start_time > current_time %}
+        const startTime = new Date('{{ flash_sale.start_time|date:"Y-m-d H:i:s" }}').getTime();
+        const now = new Date().getTime();
+        
+        if (startTime <= now) {
+            // Show a notification before refreshing
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-bolt me-2"></i> This flash sale has started! Refreshing page...
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Refresh the page after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+        {% endif %}
+    }
+    
+    // Update countdown immediately and then every second
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    
+    // Check for refresh every 30 seconds
+    setInterval(checkForRefresh, 30000);
+    
+    // Real-time stock updates
+    function updateStockInfo() {
+        fetch('{% url "store:flash_sale_stock_api" %}?sale_id={{ flash_sale.id }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    data.items.forEach(item => {
+                        // Find the product card for this item
+                        const productCard = document.querySelector(`.product-card[data-item-id="${item.id}"]`);
+                        if (productCard) {
+                            // Update the progress bar
+                            const progressBar = productCard.querySelector('.progress-bar');
+                            if (progressBar) {
+                                progressBar.style.width = `${item.remaining_percentage}%`;
+                                progressBar.setAttribute('aria-valuenow', item.remaining_percentage);
+                            }
+                            
+                            // Update the items left text
+                            const itemsLeft = productCard.querySelector('.items-left');
+                            if (itemsLeft) {
+                                if (item.stock_quantity > 0) {
+                                    itemsLeft.innerHTML = `<i class="fas fa-fire text-danger"></i> ${item.stock_quantity} items left`;
+                                    
+                                    // Make sure the button is enabled
+                                    const addButton = productCard.querySelector('.add-to-cart-btn');
+                                    if (addButton && addButton.disabled) {
+                                        addButton.disabled = false;
+                                        addButton.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> Add to Cart';
+                                    }
+                                } else {
+                                    itemsLeft.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> Sold out</span>`;
+                                    
+                                    // Disable the button
+                                    const addButton = productCard.querySelector('.add-to-cart-btn');
+                                    if (addButton && !addButton.disabled) {
+                                        addButton.disabled = true;
+                                        addButton.innerHTML = '<i class="fas fa-times me-2"></i> Sold Out';
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error updating stock info:', error));
+    }
+    
+    // Update stock info immediately and then every 5 seconds if the sale is active
+    {% if is_active %}
+    updateStockInfo();
+    const stockUpdateInterval = setInterval(updateStockInfo, 5000);
+    {% endif %}
+    
+    // Wishlist functionality
+    document.querySelectorAll('.wishlist-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId;
+            const action = this.dataset.action;
+            
+            fetch('/wishlist/toggle/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'product_id': productId,
+                    'action': action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (action === 'add') {
+                        this.classList.add('active');
+                        this.dataset.action = 'remove';
+                    } else {
+                        this.classList.remove('active');
+                        this.dataset.action = 'add';
+                    }
+                }
+            });
+        });
+    });
+    
+    // Add to cart functionality
+    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId;
+            const flashSaleItemId = this.dataset.flashSaleItemId;
+            const itemIndex = this.dataset.itemIndex;
+            
+            // Disable the button temporarily to prevent multiple clicks
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Adding...';
+            
+            fetch('/cart/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'product_id': productId,
+                    'quantity': 1,
+                    'flash_sale_item_id': flashSaleItemId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i> ${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Update cart count if you have a cart counter in your UI
+                    if (document.querySelector('.cart-count')) {
+                        document.querySelector('.cart-count').textContent = data.cart_count;
+                    }
+                    
+                    // If this is a flash sale item, update the stock display
+                    if (data.is_flash_sale) {
+                        // Get the product card
+                        const productCard = this.closest('.product-card');
+                        
+                        // Update the progress bar
+                        const progressBar = productCard.querySelector('.progress-bar');
+                        if (progressBar) {
+                            progressBar.style.width = `${data.remaining_percentage}%`;
+                            progressBar.setAttribute('aria-valuenow', data.remaining_percentage);
+                        }
+                        
+                        // Update the items left text
+                        const itemsLeft = productCard.querySelector('.items-left');
+                        if (itemsLeft) {
+                            if (data.remaining_stock > 0) {
+                                itemsLeft.innerHTML = `<i class="fas fa-fire text-danger"></i> ${data.remaining_stock} items left`;
+                                
+                                // Re-enable the button
+                                this.disabled = false;
+                                this.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> Add to Cart';
+                            } else {
+                                itemsLeft.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> Sold out</span>`;
+                                
+                                // Disable the button permanently
+                                this.disabled = true;
+                                this.innerHTML = '<i class="fas fa-times me-2"></i> Sold Out';
+                            }
+                        }
+                    } else {
+                        // Re-enable the button
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> Add to Cart';
+                    }
+                } else {
+                    // Show error message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-exclamation-circle me-2"></i> ${data.error}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Re-enable the button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> Add to Cart';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Re-enable the button
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-shopping-cart me-2"></i> Add to Cart';
+                
+                // Show error message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i> An error occurred. Please try again.
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

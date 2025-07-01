@@ -1,0 +1,340 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Flash Sales Management - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Flash Sales Management</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Flash Sales</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-bolt me-1"></i>
+                        Active Flash Sales
+                    </div>
+                    <a href="#" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i> Create New Flash Sale
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if active_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Time Remaining</th>
+                                    <th>Items Sold</th>
+                                    <th>Revenue</th>
+                                    <th>% Sold</th>
+                                    <th>Subscribers</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in active_sales %}
+                                <tr>
+                                    <td>{{ sale.title }}</td>
+                                    <td>{{ sale.start_time|date:"M d, Y H:i" }}</td>
+                                    <td>{{ sale.end_time|date:"M d, Y H:i" }}</td>
+                                    <td class="countdown" data-end-time="{{ sale.end_time|date:'Y-m-d H:i:s' }}">
+                                        {{ sale.time_remaining }}
+                                    </td>
+                                    <td>{{ sale.total_sold }}</td>
+                                    <td>${{ sale.total_revenue|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ sale.percentage_sold }}%;" 
+                                                 aria-valuenow="{{ sale.percentage_sold }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ sale.percentage_sold|floatformat:0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ sale.subscriber_count }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'dashboard:flash_sale_detail' sale.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-warning extend-sale-btn" data-sale-id="{{ sale.id }}">
+                                                <i class="fas fa-clock"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger end-sale-btn" data-sale-id="{{ sale.id }}">
+                                                <i class="fas fa-stop-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No active flash sales at the moment.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    Upcoming Flash Sales
+                </div>
+                <div class="card-body">
+                    {% if upcoming_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Time Until Start</th>
+                                    <th>Items</th>
+                                    <th>Subscribers</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in upcoming_sales %}
+                                <tr>
+                                    <td>{{ sale.title }}</td>
+                                    <td>{{ sale.start_time|date:"M d, Y H:i" }}</td>
+                                    <td>{{ sale.end_time|date:"M d, Y H:i" }}</td>
+                                    <td class="countdown-start" data-start-time="{{ sale.start_time|date:'Y-m-d H:i:s' }}">
+                                        {{ sale.start_time|timeuntil }}
+                                    </td>
+                                    <td>{{ sale.items.count }}</td>
+                                    <td>{{ sale.notifications.count }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'dashboard:flash_sale_detail' sale.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-success start-sale-btn" data-sale-id="{{ sale.id }}">
+                                                <i class="fas fa-play-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger cancel-sale-btn" data-sale-id="{{ sale.id }}">
+                                                <i class="fas fa-times-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No upcoming flash sales scheduled.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-history me-1"></i>
+                    Past Flash Sales
+                </div>
+                <div class="card-body">
+                    {% if past_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in past_sales %}
+                                <tr>
+                                    <td>{{ sale.title }}</td>
+                                    <td>{{ sale.start_time|date:"M d, Y H:i" }}</td>
+                                    <td>{{ sale.end_time|date:"M d, Y H:i" }}</td>
+                                    <td>{{ sale.end_time|timeuntil:sale.start_time }}</td>
+                                    <td>
+                                        <a href="{% url 'dashboard:flash_sale_detail' sale.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-chart-bar me-1"></i> View Report
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No past flash sales.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to update countdown timers
+    function updateCountdowns() {
+        // Update active sale countdowns
+        document.querySelectorAll('.countdown').forEach(timer => {
+            const endTime = new Date(timer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = endTime - now;
+            
+            if (timeLeft <= 0) {
+                timer.innerHTML = "Expired";
+                return;
+            }
+            
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            timer.innerHTML = `${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+        });
+        
+        // Update upcoming sale countdowns
+        document.querySelectorAll('.countdown-start').forEach(timer => {
+            const startTime = new Date(timer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = startTime - now;
+            
+            if (timeLeft <= 0) {
+                timer.innerHTML = "Starting now!";
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) {
+                timer.innerHTML = `${days}d ${hours}h ${minutes}m`;
+            } else {
+                timer.innerHTML = `${hours}h ${minutes}m`;
+            }
+        });
+    }
+    
+    // Function to check if page needs refreshing
+    function checkForRefresh() {
+        let needsRefresh = false;
+        
+        // Check if any active sale has ended
+        document.querySelectorAll('.countdown').forEach(timer => {
+            const endTime = new Date(timer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            if (endTime <= now) {
+                needsRefresh = true;
+            }
+        });
+        
+        // Check if any upcoming sale has started
+        document.querySelectorAll('.countdown-start').forEach(timer => {
+            const startTime = new Date(timer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            if (startTime <= now) {
+                needsRefresh = true;
+            }
+        });
+        
+        if (needsRefresh) {
+            // Show a notification before refreshing
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-sync-alt me-2"></i> Flash sale status changed! Refreshing page...
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Refresh the page after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+    }
+    
+    // Update countdowns immediately and then every second
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+    
+    // Check for refresh every 30 seconds
+    setInterval(checkForRefresh, 30000);
+    
+    // Handle extend sale button
+    document.querySelectorAll('.extend-sale-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.dataset.saleId;
+            // Implement extend sale functionality
+            alert('Extend sale functionality will be implemented here');
+        });
+    });
+    
+    // Handle end sale button
+    document.querySelectorAll('.end-sale-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.dataset.saleId;
+            // Implement end sale functionality
+            alert('End sale functionality will be implemented here');
+        });
+    });
+    
+    // Handle start sale button
+    document.querySelectorAll('.start-sale-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.dataset.saleId;
+            // Implement start sale functionality
+            alert('Start sale functionality will be implemented here');
+        });
+    });
+    
+    // Handle cancel sale button
+    document.querySelectorAll('.cancel-sale-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.dataset.saleId;
+            // Implement cancel sale functionality
+            alert('Cancel sale functionality will be implemented here');
+        });
+    });
+</script>
+{% endblock %}

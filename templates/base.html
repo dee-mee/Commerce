@@ -258,6 +258,11 @@
                             </ul>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{% url 'store:flash_sale_list' %}">
+                                <i class="fas fa-bolt me-1"></i>Flash Sales
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{% url 'cart:cart_detail' %}">
                                 <div class="cart-badge">
                                     <i class="fas fa-shopping-cart"></i>
@@ -271,16 +276,21 @@
                                 <i class="fas fa-user me-1"></i>{{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Addresses</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:address_list' %}">My Addresses</a></li>
                                 <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My Orders</a></li>
                                 {% if user.is_vendor %}
-                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">Vendor Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:vendor_dashboard' %}">Vendor Dashboard</a></li>
                                 {% else %}
-                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">Become a Vendor</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:vendor_register' %}">Become a Vendor</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                                <li>
+                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <a class="dropdown-item" href="javascript:void(0)" onclick="document.getElementById('logout-form').submit();">Logout</a>
+                                    </form>
+                                </li>
                             </ul>
                         </li>
                         {% else %}

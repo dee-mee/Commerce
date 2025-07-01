@@ -1,11 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, F, ExpressionWrapper, FloatField
 from django.utils import timezone
+from django.contrib import messages
+from django.http import JsonResponse
 from datetime import timedelta
 
 from orders.models import Order
-from store.models import Product
+from store.models import Product, FlashSale, FlashSaleItem, FlashSaleNotification
 from accounts.models import User
 
 @staff_member_required
@@ -99,3 +101,124 @@ def customer_management(request):
     }
     
     return render(request, 'dashboard/customer_management.html', context)
+
+@staff_member_required
+def flash_sales_management(request):
+    """
+    Dashboard view for managing flash sales
+    """
+    now = timezone.now()
+    
+    # Get active, upcoming, and past flash sales
+    active_sales = FlashSale.objects.filter(
+        is_active=True,
+        start_time__lte=now,
+        end_time__gte=now
+    ).order_by('end_time')
+    
+    upcoming_sales = FlashSale.objects.filter(
+        is_active=True,
+        start_time__gt=now
+    ).order_by('start_time')
+    
+    past_sales = FlashSale.objects.filter(
+        end_time__lt=now
+    ).order_by('-end_time')[:10]  # Show only the 10 most recent past sales
+    
+    # Calculate performance metrics for active sales
+    for sale in active_sales:
+        # Get all items in this sale
+        sale_items = FlashSaleItem.objects.filter(flash_sale=sale)
+        
+        # Calculate total items sold
+        total_sold = sum([item.initial_stock_quantity - item.stock_quantity for item in sale_items])
+        sale.total_sold = total_sold
+        
+        # Calculate total revenue
+        sale.total_revenue = sum([item.flash_sale_price * (item.initial_stock_quantity - item.stock_quantity) for item in sale_items])
+        
+        # Calculate percentage sold
+        total_initial_stock = sum([item.initial_stock_quantity for item in sale_items])
+        sale.percentage_sold = (total_sold / total_initial_stock * 100) if total_initial_stock > 0 else 0
+        
+        # Calculate time remaining
+        sale.time_remaining = sale.end_time - now
+        
+        # Get subscriber count
+        sale.subscriber_count = FlashSaleNotification.objects.filter(flash_sale=sale).count()
+    
+    context = {
+        'active_sales': active_sales,
+        'upcoming_sales': upcoming_sales,
+        'past_sales': past_sales,
+        'current_time': now,
+    }
+    
+    return render(request, 'dashboard/flash_sales_management.html', context)
+
+@staff_member_required
+def flash_sale_detail_admin(request, sale_id):
+    """
+    Dashboard view for managing a specific flash sale
+    """
+    sale = get_object_or_404(FlashSale, id=sale_id)
+    now = timezone.now()
+    
+    # Check if the sale is active
+    is_active = sale.start_time <= now <= sale.end_time
+    
+    # Get all items in this flash sale with performance metrics
+    sale_items = FlashSaleItem.objects.filter(flash_sale=sale).select_related('product')
+    
+    for item in sale_items:
+        # Calculate items sold
+        item.sold_count = item.initial_stock_quantity - item.stock_quantity
+        
+        # Calculate revenue
+        item.revenue = item.flash_sale_price * item.sold_count
+        
+        # Calculate percentage sold
+        item.percentage_sold = (item.sold_count / item.initial_stock_quantity * 100) if item.initial_stock_quantity > 0 else 0
+    
+    # Get subscriber count
+    subscriber_count = FlashSaleNotification.objects.filter(flash_sale=sale).count()
+    
+    context = {
+        'flash_sale': sale,
+        'sale_items': sale_items,
+        'is_active': is_active,
+        'subscriber_count': subscriber_count,
+        'current_time': now,
+    }
+    
+    return render(request, 'dashboard/flash_sale_detail_admin.html', context)
+
+@staff_member_required
+def update_flash_sale_stock(request, item_id):
+    """
+    API endpoint to update flash sale item stock
+    """
+    if request.method == 'POST':
+        try:
+            item = get_object_or_404(FlashSaleItem, id=item_id)
+            new_stock = int(request.POST.get('stock_quantity', 0))
+            
+            # Validate the new stock value
+            if new_stock < 0:
+                return JsonResponse({'error': 'Stock quantity cannot be negative'}, status=400)
+            
+            # Update the stock
+            item.stock_quantity = new_stock
+            item.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Stock updated to {new_stock}',
+                'stock_quantity': new_stock,
+                'remaining_percentage': item.get_remaining_percentage()
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

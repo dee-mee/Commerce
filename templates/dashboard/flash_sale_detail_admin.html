@@ -1,0 +1,472 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ flash_sale.title }} - Flash Sale Management{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ flash_sale.title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:flash_sales' %}">Flash Sales</a></li>
+        <li class="breadcrumb-item active">{{ flash_sale.title }}</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Flash Sale Details
+                    </div>
+                    <div>
+                        {% if is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% elif flash_sale.start_time > current_time %}
+                        <span class="badge bg-warning">Upcoming</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Ended</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Sale Information</h5>
+                            <p><strong>Description:</strong> {{ flash_sale.description }}</p>
+                            <p><strong>Start Time:</strong> {{ flash_sale.start_time|date:"F d, Y H:i" }}</p>
+                            <p><strong>End Time:</strong> {{ flash_sale.end_time|date:"F d, Y H:i" }}</p>
+                            <p><strong>Duration:</strong> {{ flash_sale.end_time|timeuntil:flash_sale.start_time }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if is_active %}
+                                <span class="text-success">Active</span>
+                                {% elif flash_sale.start_time > current_time %}
+                                <span class="text-warning">Upcoming</span>
+                                {% else %}
+                                <span class="text-secondary">Ended</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Performance Metrics</h5>
+                            <p><strong>Total Items:</strong> {{ sale_items.count }}</p>
+                            <p><strong>Subscribers:</strong> {{ subscriber_count }}</p>
+                            
+                            {% if is_active or flash_sale.end_time < current_time %}
+                            {% with total_sold=0 total_revenue=0 total_initial=0 %}
+                                {% for item in sale_items %}
+                                    {% with sold=item.initial_stock_quantity|add:"-"|add:item.stock_quantity %}
+                                        {% with total_sold=total_sold|add:sold total_revenue=total_revenue|add:item.revenue total_initial=total_initial|add:item.initial_stock_quantity %}{% endwith %}
+                                    {% endwith %}
+                                {% endfor %}
+                                
+                                <p><strong>Items Sold:</strong> {{ total_sold }} / {{ total_initial }}</p>
+                                <p><strong>Total Revenue:</strong> ${{ total_revenue|floatformat:2 }}</p>
+                                
+                                {% if total_initial > 0 %}
+                                <p><strong>Sell-Through Rate:</strong> {{ total_sold|div:total_initial|mul:100|floatformat:1 }}%</p>
+                                {% endif %}
+                            {% endwith %}
+                            {% endif %}
+                            
+                            {% if is_active %}
+                            <div class="mt-3">
+                                <h6>Time Remaining:</h6>
+                                <div class="countdown-timer p-2 bg-light rounded text-center" data-end-time="{{ flash_sale.end_time|date:'Y-m-d H:i:s' }}">
+                                    Loading...
+                                </div>
+                            </div>
+                            {% elif flash_sale.start_time > current_time %}
+                            <div class="mt-3">
+                                <h6>Starts In:</h6>
+                                <div class="countdown-start-timer p-2 bg-light rounded text-center" data-start-time="{{ flash_sale.start_time|date:'Y-m-d H:i:s' }}">
+                                    Loading...
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end">
+                                {% if is_active %}
+                                <button class="btn btn-warning me-2" id="extendSaleBtn">
+                                    <i class="fas fa-clock me-1"></i> Extend Sale
+                                </button>
+                                <button class="btn btn-danger me-2" id="endSaleBtn">
+                                    <i class="fas fa-stop-circle me-1"></i> End Sale Now
+                                </button>
+                                {% elif flash_sale.start_time > current_time %}
+                                <button class="btn btn-success me-2" id="startSaleBtn">
+                                    <i class="fas fa-play-circle me-1"></i> Start Sale Now
+                                </button>
+                                <button class="btn btn-danger me-2" id="cancelSaleBtn">
+                                    <i class="fas fa-times-circle me-1"></i> Cancel Sale
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'store:flash_sale_detail' flash_sale.id %}" class="btn btn-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt me-1"></i> View Public Page
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-list me-1"></i>
+                    Flash Sale Items
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Original Price</th>
+                                    <th>Sale Price</th>
+                                    <th>Discount</th>
+                                    <th>Initial Stock</th>
+                                    <th>Current Stock</th>
+                                    <th>Sold</th>
+                                    <th>Revenue</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in sale_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product.images.all %}
+                                            <img src="{{ item.product.images.first.image.url }}" 
+                                                 alt="{{ item.product.name }}" 
+                                                 width="50" height="50" 
+                                                 style="object-fit: contain;" 
+                                                 class="me-2">
+                                            {% else %}
+                                            <div class="bg-light me-2" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div>{{ item.product.name }}</div>
+                                                <small class="text-muted">SKU: {{ item.product.sku }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>${{ item.original_price }}</td>
+                                    <td>${{ item.flash_sale_price }}</td>
+                                    <td>{{ item.discount_percentage }}%</td>
+                                    <td>{{ item.initial_stock_quantity }}</td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control stock-input" 
+                                                   value="{{ item.stock_quantity }}" 
+                                                   min="0" max="{{ item.initial_stock_quantity }}"
+                                                   data-item-id="{{ item.id }}"
+                                                   {% if not is_active %}disabled{% endif %}>
+                                            <button class="btn btn-outline-primary update-stock-btn" 
+                                                    data-item-id="{{ item.id }}"
+                                                    {% if not is_active %}disabled{% endif %}>
+                                                <i class="fas fa-save"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.sold_count }}</td>
+                                    <td>${{ item.revenue|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ item.percentage_sold }}%;" 
+                                                 aria-valuenow="{{ item.percentage_sold }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'store:product_detail' item.product.slug %}" class="btn btn-outline-primary" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if is_active %}
+                                            <button type="button" class="btn btn-outline-danger remove-item-btn" data-item-id="{{ item.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to update countdown timers
+    function updateCountdowns() {
+        // Update active sale countdown
+        const countdownTimer = document.querySelector('.countdown-timer');
+        if (countdownTimer) {
+            const endTime = new Date(countdownTimer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = endTime - now;
+            
+            if (timeLeft <= 0) {
+                countdownTimer.innerHTML = "Expired";
+                return;
+            }
+            
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            countdownTimer.innerHTML = `
+                <span class="h4">${hours.toString().padStart(2, '0')}</span>h : 
+                <span class="h4">${minutes.toString().padStart(2, '0')}</span>m : 
+                <span class="h4">${seconds.toString().padStart(2, '0')}</span>s
+            `;
+        }
+        
+        // Update upcoming sale countdown
+        const startTimer = document.querySelector('.countdown-start-timer');
+        if (startTimer) {
+            const startTime = new Date(startTimer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = startTime - now;
+            
+            if (timeLeft <= 0) {
+                startTimer.innerHTML = "Starting now!";
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            if (days > 0) {
+                startTimer.innerHTML = `
+                    <span class="h4">${days}</span>d : 
+                    <span class="h4">${hours.toString().padStart(2, '0')}</span>h : 
+                    <span class="h4">${minutes.toString().padStart(2, '0')}</span>m : 
+                    <span class="h4">${seconds.toString().padStart(2, '0')}</span>s
+                `;
+            } else {
+                startTimer.innerHTML = `
+                    <span class="h4">${hours.toString().padStart(2, '0')}</span>h : 
+                    <span class="h4">${minutes.toString().padStart(2, '0')}</span>m : 
+                    <span class="h4">${seconds.toString().padStart(2, '0')}</span>s
+                `;
+            }
+        }
+    }
+    
+    // Function to check if page needs refreshing
+    function checkForRefresh() {
+        let needsRefresh = false;
+        
+        // Check if active sale has ended
+        const countdownTimer = document.querySelector('.countdown-timer');
+        if (countdownTimer) {
+            const endTime = new Date(countdownTimer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            if (endTime <= now) {
+                needsRefresh = true;
+            }
+        }
+        
+        // Check if upcoming sale has started
+        const startTimer = document.querySelector('.countdown-start-timer');
+        if (startTimer) {
+            const startTime = new Date(startTimer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            if (startTime <= now) {
+                needsRefresh = true;
+            }
+        }
+        
+        if (needsRefresh) {
+            // Show a notification before refreshing
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-sync-alt me-2"></i> Flash sale status changed! Refreshing page...
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Refresh the page after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+    }
+    
+    // Update stock quantity
+    document.querySelectorAll('.update-stock-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const stockInput = document.querySelector(`.stock-input[data-item-id="${itemId}"]`);
+            const newStock = stockInput.value;
+            
+            // Disable the button temporarily
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            // Send the update request
+            fetch(`{% url 'dashboard:update_flash_sale_stock' 0 %}`.replace('0', itemId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `stock_quantity=${newStock}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i> ${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Re-enable the button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-save"></i>';
+                    
+                    // Refresh the page after 2 seconds to update all stats
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    // Show error message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-exclamation-circle me-2"></i> ${data.error || 'An error occurred'}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Re-enable the button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-save"></i>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Show error message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i> An error occurred. Please try again.
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Re-enable the button
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-save"></i>';
+            });
+        });
+    });
+    
+    // Handle extend sale button
+    document.getElementById('extendSaleBtn')?.addEventListener('click', function() {
+        // Implement extend sale functionality
+        alert('Extend sale functionality will be implemented here');
+    });
+    
+    // Handle end sale button
+    document.getElementById('endSaleBtn')?.addEventListener('click', function() {
+        // Implement end sale functionality
+        alert('End sale functionality will be implemented here');
+    });
+    
+    // Handle start sale button
+    document.getElementById('startSaleBtn')?.addEventListener('click', function() {
+        // Implement start sale functionality
+        alert('Start sale functionality will be implemented here');
+    });
+    
+    // Handle cancel sale button
+    document.getElementById('cancelSaleBtn')?.addEventListener('click', function() {
+        // Implement cancel sale functionality
+        alert('Cancel sale functionality will be implemented here');
+    });
+    
+    // Handle remove item button
+    document.querySelectorAll('.remove-item-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            // Implement remove item functionality
+            alert(`Remove item ${itemId} functionality will be implemented here`);
+        });
+    });
+    
+    // Update countdowns immediately and then every second
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+    
+    // Check for refresh every 30 seconds
+    setInterval(checkForRefresh, 30000);
+</script>
+{% endblock %}

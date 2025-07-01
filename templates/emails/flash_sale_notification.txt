@@ -1,0 +1,22 @@
+🔥 FLASH SALE ALERT! 🔥
+
+Hello {{ user.first_name|default:user.username }},
+
+Great news! The flash sale you subscribed to is starting soon:
+
+{{ sale.title }}
+
+{{ sale.description }}
+
+Starting in: {{ minutes_until_start }} minutes
+
+Don't miss out on these amazing deals with discounts up to 70% off! Be ready to shop when the sale begins.
+
+View Flash Sale: {{ sale_url }}
+
+Happy shopping!
+The ShopEase Team
+
+---
+This email was sent to {{ user.email }} because you subscribed to receive notifications for this flash sale.
+© {% now "Y" %} ShopEase. All rights reserved.

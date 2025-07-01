@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %}Flash Sales - ShopEase{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flash-sale-banner {
+        background: linear-gradient(to right, #ff416c, #ff4b2b);
+        color: white;
+        padding: 20px 0;
+        margin-bottom: 30px;
+    }
+    
+    .countdown-timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        padding: 10px 15px;
+        display: inline-block;
+    }
+    
+    .sale-card {
+        transition: transform 0.3s;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .sale-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #ff4b2b;
+        color: white;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 20px;
+        z-index: 2;
+    }
+    
+    .stock-progress {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    .items-left {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .upcoming-sale {
+        background-color: #f8f9fa;
+        border-left: 4px solid #ff4b2b;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Flash Sales</li>
+        </ol>
+    </nav>
+    
+    <!-- Flash Sale Banner -->
+    <div class="flash-sale-banner text-center">
+        <div class="container">
+            <h1><i class="fas fa-bolt me-2"></i> Flash Sales</h1>
+            <p class="lead">Limited-time offers with massive discounts!</p>
+        </div>
+    </div>
+    
+    <!-- Active Flash Sales -->
+    <h2 class="mb-4">Active Sales</h2>
+    
+    {% if flash_sales %}
+    <div class="row">
+        {% for sale in flash_sales %}
+        <div class="col-md-6 mb-4">
+            <div class="card sale-card h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ sale.title }}</h5>
+                    <div class="countdown-timer" data-end-time="{{ sale.end_time|date:'Y-m-d H:i:s' }}">
+                        {{ sale.time_left_display }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>{{ sale.description }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'store:flash_sale_detail' sale.id %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart me-2"></i> Shop Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> No active flash sales at the moment. Check back soon!
+    </div>
+    {% endif %}
+    
+    <!-- Upcoming Flash Sales -->
+    <h2 class="mt-5 mb-4">Upcoming Sales</h2>
+    
+    {% if upcoming_sales %}
+    <div class="list-group">
+        {% for sale in upcoming_sales %}
+        <div class="upcoming-sale">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">{{ sale.title }}</h5>
+                    <p class="mb-1">{{ sale.description|truncatechars:100 }}</p>
+                    {% if user.is_authenticated %}
+                    <button class="btn btn-sm btn-outline-primary mt-2 notification-btn" 
+                            data-sale-id="{{ sale.id }}" 
+                            data-action="subscribe">
+                        <i class="fas fa-bell me-1"></i> Get Notified
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    <div class="text-muted">Starts in:</div>
+                    <div class="fw-bold" data-start-time="{{ sale.start_time|date:'Y-m-d H:i:s' }}">
+                        {{ sale.start_time|timeuntil }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> No upcoming flash sales scheduled. Check back soon!
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to update countdown timers
+    function updateCountdowns() {
+        // Update active sale countdowns
+        document.querySelectorAll('.countdown-timer').forEach(timer => {
+            const endTime = new Date(timer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = endTime - now;
+            
+            if (timeLeft <= 0) {
+                timer.innerHTML = "Expired";
+                timer.parentElement.parentElement.classList.add('bg-secondary');
+                return;
+            }
+            
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            timer.innerHTML = `${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+        });
+        
+        // Update upcoming sale countdowns
+        document.querySelectorAll('[data-start-time]').forEach(timer => {
+            const startTime = new Date(timer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            const timeLeft = startTime - now;
+            
+            if (timeLeft <= 0) {
+                timer.innerHTML = "Starting now!";
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) {
+                timer.innerHTML = `${days}d ${hours}h ${minutes}m`;
+            } else {
+                timer.innerHTML = `${hours}h ${minutes}m`;
+            }
+        });
+    }
+    
+    // Function to check if page needs refreshing
+    function checkForRefresh() {
+        let needsRefresh = false;
+        
+        // Check if any active sale has ended
+        document.querySelectorAll('.countdown-timer').forEach(timer => {
+            const endTime = new Date(timer.dataset.endTime).getTime();
+            const now = new Date().getTime();
+            if (endTime <= now) {
+                needsRefresh = true;
+            }
+        });
+        
+        // Check if any upcoming sale has started
+        document.querySelectorAll('[data-start-time]').forEach(timer => {
+            const startTime = new Date(timer.dataset.startTime).getTime();
+            const now = new Date().getTime();
+            if (startTime <= now) {
+                needsRefresh = true;
+            }
+        });
+        
+        if (needsRefresh) {
+            // Show a notification before refreshing
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-sync-alt me-2"></i> Flash sale status changed! Refreshing page...
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Refresh the page after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+    }
+    
+    // Update countdowns immediately and then every second
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+    
+    // Check for refresh every 30 seconds
+    setInterval(checkForRefresh, 30000);
+    
+    // Handle notification subscription buttons
+    document.querySelectorAll('.notification-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.dataset.saleId;
+            const action = this.dataset.action;
+            
+            // Disable the button temporarily
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            fetch('{% url "store:flash_sale_notification_api" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'sale_id': saleId,
+                    'action': action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i> ${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    // Update button state
+                    if (data.status === 'subscribed') {
+                        this.innerHTML = '<i class="fas fa-bell-slash me-1"></i> Unsubscribe';
+                        this.classList.remove('btn-outline-primary');
+                        this.classList.add('btn-outline-secondary');
+                        this.dataset.action = 'unsubscribe';
+                    } else {
+                        this.innerHTML = '<i class="fas fa-bell me-1"></i> Get Notified';
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-outline-primary');
+                        this.dataset.action = 'subscribe';
+                    }
+                } else {
+                    // Show error message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-exclamation-circle me-2"></i> ${data.error || 'An error occurred'}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    
+                    this.innerHTML = originalText;
+                }
+                
+                // Re-enable the button
+                this.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                // Show error message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i> An error occurred. Please try again.
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            });
+        });
+    });
+</script>
+{% endblock %}
